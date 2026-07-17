@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg:#0a0a0c;
@@ -331,6 +333,7 @@
       <div class="mark">Uby · Operações</div>
       <h1>Central de Cidades</h1>
       <div class="sub" id="cityCount">65 municípios atendidos</div>
+      <div class="sub" style="margin-top:2px;">☁️ Dados sincronizados entre todos os usuários</div>
     </div>
     <div class="sidebar-search">
       <input type="text" id="citySearch" placeholder="Buscar cidade...">
@@ -579,12 +582,29 @@ const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","A
 const WEEKDAYS = ["D","S","T","Q","Q","S","S"];
 const ALL_CITIES_TAG = "ALL";
 
+/* ======================= FIREBASE (dados compartilhados entre todos) ======================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyA4lJmfhw7oN3YBhYySwaWLvVRELMxeK-A",
+  authDomain: "ubymadrugada.firebaseapp.com",
+  projectId: "ubymadrugada",
+  storageBucket: "ubymadrugada.firebasestorage.app",
+  messagingSenderId: "63235057717",
+  appId: "1:63235057717:web:5cd41712b02fe9f272e97c"
+};
+const FS_COLLECTION = 'opsData';
+
 /* ======================= PERSISTÊNCIA ======================= */
 function load(key, fallback){
   try{ const v = JSON.parse(localStorage.getItem(key)); return v===null||v===undefined ? fallback : v; }
   catch(e){ return fallback; }
 }
-function persist(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+function persist(key, val){
+  localStorage.setItem(key, JSON.stringify(val));
+  if(window.db){
+    window.db.collection(FS_COLLECTION).doc(key).set({ value: val, updatedAt: Date.now() })
+      .catch(err=>{ console.error('Erro ao salvar no servidor:', err); toast('⚠️ Falha ao sincronizar com o servidor.'); });
+  }
+}
 
 /* migração de formatos antigos */
 function migrateEvents(raw){
@@ -1347,6 +1367,68 @@ document.querySelectorAll('.overlay').forEach(ov=>{
 renderSidebar();
 renderDashboard();
 renderCalendar();
+initFirebaseSync();
+
+function syncError(err){
+  console.error('Erro de sincronização:', err);
+  toast('⚠️ Sem conexão com o servidor — mostrando dados locais.');
+}
+
+function initFirebaseSync(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+  }catch(e){
+    console.error('Erro ao iniciar Firebase:', e);
+    toast('⚠️ Não foi possível conectar ao servidor.');
+    return;
+  }
+  const col = window.db.collection(FS_COLLECTION);
+
+  col.doc('ops_reports').onSnapshot(snap=>{
+    if(snap.exists){
+      STATE.reports = migrateReports(snap.data().value || []);
+      localStorage.setItem('ops_reports', JSON.stringify(STATE.reports));
+      renderDashboard();
+    } else if(STATE.reports.length){
+      col.doc('ops_reports').set({ value: STATE.reports, updatedAt: Date.now() });
+    }
+  }, syncError);
+
+  col.doc('ops_events').onSnapshot(snap=>{
+    if(snap.exists){
+      STATE.events = migrateEvents(snap.data().value || []);
+      localStorage.setItem('ops_events', JSON.stringify(STATE.events));
+      renderCalendar();
+      if(document.getElementById('dayOverlay').classList.contains('open')) renderDayEventsList();
+      if(document.getElementById('cityOverlay').classList.contains('open')) renderCityEventsList();
+    } else if(STATE.events.length){
+      col.doc('ops_events').set({ value: STATE.events, updatedAt: Date.now() });
+    }
+  }, syncError);
+
+  col.doc('ops_drivers').onSnapshot(snap=>{
+    if(snap.exists){
+      STATE.drivers = migrateDrivers(snap.data().value || {});
+      localStorage.setItem('ops_drivers', JSON.stringify(STATE.drivers));
+      renderSidebar(document.getElementById('citySearch').value);
+      if(document.getElementById('cityOverlay').classList.contains('open')) renderDriversList();
+    } else if(Object.keys(STATE.drivers).length){
+      col.doc('ops_drivers').set({ value: STATE.drivers, updatedAt: Date.now() });
+    }
+  }, syncError);
+
+  col.doc('ops_city_status').onSnapshot(snap=>{
+    if(snap.exists){
+      STATE.cityStatus = snap.data().value || {};
+      localStorage.setItem('ops_city_status', JSON.stringify(STATE.cityStatus));
+      renderSidebar(document.getElementById('citySearch').value);
+      if(document.getElementById('cityOverlay').classList.contains('open')) renderStatusButtons();
+    } else if(Object.keys(STATE.cityStatus).length){
+      col.doc('ops_city_status').set({ value: STATE.cityStatus, updatedAt: Date.now() });
+    }
+  }, syncError);
+}
 </script>
 </body>
 </html>
