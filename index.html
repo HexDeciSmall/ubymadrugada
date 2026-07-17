@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <style>
   :root{
     --bg:#0a0a0c;
@@ -314,6 +315,20 @@
   .driver-card .info .meta{font-size:11px;color:var(--text-faint);margin-top:3px;font-family:var(--font-mono);}
   .driver-card .actions{display:flex;gap:6px;flex-shrink:0;}
 
+  /* ===== GUIAS E DICAS ===== */
+  .type-toggle{display:flex;gap:8px;margin-bottom:4px;}
+  .type-btn{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);padding:10px 8px;border-radius:7px;font-size:12px;font-weight:600;text-align:center;}
+  .type-btn:hover{border-color:var(--text-faint);}
+  .type-btn.active{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
+  .guide-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;}
+  .guide-card .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .guide-card .ttl{font-family:var(--font-display);font-size:14.5px;font-weight:600;color:var(--text);margin-top:6px;}
+  .guide-card .meta{font-size:11px;color:var(--text-faint);margin-top:3px;}
+  .guide-card .body{margin-top:10px;font-size:12.5px;color:var(--text-dim);white-space:pre-wrap;line-height:1.6;}
+  .guide-type-badge{display:inline-block;font-size:9.5px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .guide-type-badge.pdf{background:var(--crimson-glow);color:var(--crimson-bright);}
+  .guide-type-badge.texto{background:rgba(124,140,240,.16);color:#7c8cf0;}
+
   .toast{
     position:fixed;bottom:20px;right:20px;background:var(--surface-3);border:1px solid var(--crimson);color:var(--text);
     padding:11px 18px;border-radius:7px;font-size:12.5px;z-index:100;opacity:0;transform:translateY(8px);
@@ -376,6 +391,7 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="dashboard">Relatórios</button>
         <button class="tab-btn" data-tab="calendar">Calendário</button>
+        <button class="tab-btn" data-tab="guides">Guias e Dicas</button>
       </div>
     </div>
 
@@ -474,6 +490,55 @@
         </div>
       </div>
       <div class="months-grid" id="monthsGrid"></div>
+    </section>
+
+    <!-- GUIAS E DICAS -->
+    <section class="tab-panel" id="tab-guides">
+      <div class="import-bar">
+        <div class="txt">
+          <strong>Guias e dicas para a madrugada</strong>
+          <span>Adicione manuais em PDF ou escreva orientações diretamente — fica disponível para toda a equipe.</span>
+        </div>
+        <button class="btn" id="newGuideBtn">+ Novo guia</button>
+      </div>
+
+      <div class="manual-form" id="guideForm" style="display:none;">
+        <div class="form-title" id="guideFormTitle">Novo guia</div>
+
+        <div class="field">
+          <label>Tipo</label>
+          <div class="type-toggle">
+            <button class="type-btn active" type="button" id="guideTypeTexto">Texto / Dica</button>
+            <button class="type-btn" type="button" id="guideTypePdf">Documento PDF</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Título</label>
+          <input type="text" id="guideTitle" placeholder="ex: Procedimento para corrida cancelada de madrugada">
+        </div>
+
+        <div class="field" id="guideTextField">
+          <label>Conteúdo</label>
+          <textarea id="guideContent" style="min-height:150px;" placeholder="Escreva o passo a passo, dica ou orientação..."></textarea>
+        </div>
+
+        <div class="field" id="guidePdfField" style="display:none;">
+          <label>Arquivo PDF</label>
+          <input type="file" id="guideFile" accept="application/pdf" style="padding:6px;">
+          <label style="margin-top:10px;">Descrição (opcional)</label>
+          <input type="text" id="guideDescription" placeholder="Do que se trata esse documento...">
+          <div id="guideUploadStatus" style="font-size:11px;color:var(--text-faint);margin-top:6px;"></div>
+        </div>
+
+        <div class="full">
+          <button class="btn ghost small" id="guideCancel">Cancelar</button>
+          <button class="btn small" id="guideSave">Salvar guia</button>
+        </div>
+      </div>
+
+      <div class="section-title">Guias cadastrados <span class="hint" id="guidesHint"></span></div>
+      <div id="guidesList"></div>
     </section>
   </main>
 </div>
@@ -666,6 +731,8 @@ const STATE = {
   events: migrateEvents(load('ops_events', [])),
   drivers: migrateDrivers(load('ops_drivers', {})),
   cityStatus: load('ops_city_status', {}),
+  guides: load('ops_guides', []),
+  guideType: 'texto',
   year: new Date().getFullYear(),
   activeCity: null,
   dayModalDate: null,
@@ -737,6 +804,9 @@ function fmtPhone(phone){
   if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return phone || '';
 }
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function cityIdFromName(name){
   if(!name) return null;
   const n = normalize(name);
@@ -788,6 +858,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='calendar') renderCalendar();
+    if(btn.dataset.tab==='guides') renderGuides();
   });
 });
 document.getElementById('menuToggle').addEventListener('click', ()=>{
@@ -1385,6 +1456,139 @@ function renderCityEventsList(){
   }).join('');
 }
 
+/* ======================= GUIAS E DICAS ======================= */
+function setGuideType(t){
+  STATE.guideType = t;
+  document.getElementById('guideTypeTexto').classList.toggle('active', t==='texto');
+  document.getElementById('guideTypePdf').classList.toggle('active', t==='pdf');
+  document.getElementById('guideTextField').style.display = t==='texto' ? 'block' : 'none';
+  document.getElementById('guidePdfField').style.display = t==='pdf' ? 'block' : 'none';
+}
+document.getElementById('guideTypeTexto').addEventListener('click', ()=> setGuideType('texto'));
+document.getElementById('guideTypePdf').addEventListener('click', ()=> setGuideType('pdf'));
+
+function openGuideForm(){
+  document.getElementById('guideFormTitle').textContent = 'Novo guia';
+  document.getElementById('guideTitle').value = '';
+  document.getElementById('guideContent').value = '';
+  document.getElementById('guideDescription').value = '';
+  document.getElementById('guideFile').value = '';
+  document.getElementById('guideUploadStatus').textContent = '';
+  setGuideType('texto');
+  document.getElementById('guideForm').style.display = 'block';
+  document.getElementById('guideForm').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+document.getElementById('newGuideBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('guideForm');
+  if(f.style.display === 'block'){ f.style.display = 'none'; return; }
+  openGuideForm();
+});
+document.getElementById('guideCancel').addEventListener('click', ()=>{
+  document.getElementById('guideForm').style.display = 'none';
+});
+
+document.getElementById('guideSave').addEventListener('click', async ()=>{
+  const title = document.getElementById('guideTitle').value.trim();
+  if(!title){ toast('Informe um título.'); return; }
+
+  if(STATE.guideType === 'texto'){
+    const content = document.getElementById('guideContent').value.trim();
+    if(!content){ toast('Escreva o conteúdo do guia.'); return; }
+    const guide = { id:'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'texto', title, content, createdAt: Date.now() };
+    STATE.guides.push(guide);
+    persist('ops_guides', STATE.guides);
+    document.getElementById('guideForm').style.display = 'none';
+    renderGuides();
+    toast('Guia salvo.');
+    return;
+  }
+
+  // tipo PDF
+  const file = document.getElementById('guideFile').files[0];
+  if(!file){ toast('Selecione um arquivo PDF.'); return; }
+  if(file.type !== 'application/pdf'){ toast('O arquivo precisa ser um PDF.'); return; }
+  if(!window.storage){ toast('⚠️ Armazenamento de arquivos indisponível no momento.'); return; }
+
+  const statusEl = document.getElementById('guideUploadStatus');
+  const saveBtn = document.getElementById('guideSave');
+  statusEl.textContent = 'Enviando arquivo, aguarde...';
+  saveBtn.disabled = true;
+  const id = 'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  const path = `guides/${id}-${file.name}`;
+  try{
+    const uploadSnap = await window.storage.ref(path).put(file);
+    const url = await uploadSnap.ref.getDownloadURL();
+    const guide = {
+      id, type:'pdf', title,
+      description: document.getElementById('guideDescription').value.trim(),
+      fileName: file.name, storagePath: path, downloadURL: url, createdAt: Date.now()
+    };
+    STATE.guides.push(guide);
+    persist('ops_guides', STATE.guides);
+    statusEl.textContent = '';
+    saveBtn.disabled = false;
+    document.getElementById('guideForm').style.display = 'none';
+    renderGuides();
+    toast('PDF enviado e guia salvo.');
+  }catch(err){
+    console.error('Erro ao enviar PDF:', err);
+    statusEl.textContent = '';
+    saveBtn.disabled = false;
+    toast('⚠️ Erro ao enviar o PDF. Verifique se o Firebase Storage está ativado.');
+  }
+});
+
+function deleteGuide(id){
+  const guide = STATE.guides.find(g=>g.id===id);
+  if(guide && guide.type==='pdf' && guide.storagePath && window.storage){
+    window.storage.ref(guide.storagePath).delete().catch(()=>{});
+  }
+  STATE.guides = STATE.guides.filter(g=>g.id!==id);
+  persist('ops_guides', STATE.guides);
+  renderGuides();
+  toast('Guia removido.');
+}
+
+function renderGuides(){
+  const wrap = document.getElementById('guidesList');
+  const hint = document.getElementById('guidesHint');
+  const list = [...STATE.guides].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  hint.textContent = list.length ? `${list.length} guia(s)` : '';
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state">Nenhum guia cadastrado ainda. Adicione um PDF ou escreva uma dica para a equipe.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(g=>{
+    if(g.type==='pdf'){
+      return `
+      <div class="guide-card">
+        <div class="row">
+          <div>
+            <span class="guide-type-badge pdf">PDF</span>
+            <div class="ttl">${escapeHtml(g.title)}</div>
+            <div class="meta">${escapeHtml(g.fileName||'')}${g.description ? ' · ' + escapeHtml(g.description) : ''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <a class="btn ghost small" href="${g.downloadURL}" target="_blank" rel="noopener">Abrir PDF</a>
+            <button class="btn danger small" onclick="deleteGuide('${g.id}')">Excluir</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="guide-card">
+      <div class="row">
+        <div>
+          <span class="guide-type-badge texto">Dica</span>
+          <div class="ttl">${escapeHtml(g.title)}</div>
+        </div>
+        <button class="btn danger small" onclick="deleteGuide('${g.id}')">Excluir</button>
+      </div>
+      <div class="body">${escapeHtml(g.content)}</div>
+    </div>`;
+  }).join('');
+}
+
 /* ======================= MODAL CLOSE ======================= */
 document.querySelectorAll('[data-close]').forEach(btn=>{
   btn.addEventListener('click', ()=> document.getElementById(btn.dataset.close).classList.remove('open'));
@@ -1397,6 +1601,7 @@ document.querySelectorAll('.overlay').forEach(ov=>{
 renderSidebar();
 renderDashboard();
 renderCalendar();
+renderGuides();
 initFirebaseSync();
 
 function syncError(err){
@@ -1408,6 +1613,7 @@ function initFirebaseSync(){
   try{
     firebase.initializeApp(firebaseConfig);
     window.db = firebase.firestore();
+    window.storage = firebase.storage();
   }catch(e){
     console.error('Erro ao iniciar Firebase:', e);
     toast('⚠️ Não foi possível conectar ao servidor.');
@@ -1456,6 +1662,16 @@ function initFirebaseSync(){
       if(document.getElementById('cityOverlay').classList.contains('open')) renderStatusButtons();
     } else if(Object.keys(STATE.cityStatus).length){
       col.doc('ops_city_status').set({ value: STATE.cityStatus, updatedAt: Date.now() });
+    }
+  }, syncError);
+
+  col.doc('ops_guides').onSnapshot(snap=>{
+    if(snap.exists){
+      STATE.guides = snap.data().value || [];
+      localStorage.setItem('ops_guides', JSON.stringify(STATE.guides));
+      renderGuides();
+    } else if(STATE.guides.length){
+      col.doc('ops_guides').set({ value: STATE.guides, updatedAt: Date.now() });
     }
   }, syncError);
 }
