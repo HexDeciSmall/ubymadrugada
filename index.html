@@ -69,8 +69,14 @@
   }
   .city-btn:hover{background:var(--surface-2);color:var(--text);}
   .city-btn.active{background:var(--crimson-glow);color:var(--crimson-bright);border-left-color:var(--crimson-bright);}
-  .city-btn .dot{width:5px;height:5px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
-  .city-btn.has-driver .dot{background:var(--whats);}
+  .city-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
+  .city-btn.status-24h .dot{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .city-btn.status-sem .dot{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
+  .sidebar-legend{display:flex;gap:14px;padding:0 18px 12px;font-size:10.5px;color:var(--text-faint);border-bottom:1px solid var(--border);}
+  .sidebar-legend span{display:flex;align-items:center;gap:5px;}
+  .sidebar-legend i{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  .sidebar-legend i.g{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .sidebar-legend i.r{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
 
   /* ===== MAIN ===== */
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -254,6 +260,19 @@
   .tag{font-size:10px;background:var(--surface-3);color:var(--text-dim);padding:2px 8px;border-radius:10px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
 
+  .status-toggle{display:flex;gap:8px;margin-bottom:20px;}
+  .status-btn{
+    flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:10px 8px;border-radius:7px;font-size:12px;font-weight:600;display:flex;align-items:center;
+    justify-content:center;gap:7px;
+  }
+  .status-btn i{width:8px;height:8px;border-radius:50%;background:var(--text-faint);}
+  .status-btn:hover{border-color:var(--text-faint);}
+  .status-btn.g.active{background:rgba(61,220,132,.14);border-color:#3ddc84;color:#3ddc84;}
+  .status-btn.g.active i{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .status-btn.r.active{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
+  .status-btn.r.active i{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
+
   .driver-form{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;}
   .driver-form .field-row{margin-bottom:10px;}
   .driver-form .full-actions{display:flex;justify-content:flex-end;}
@@ -292,6 +311,10 @@
     </div>
     <div class="sidebar-search">
       <input type="text" id="citySearch" placeholder="Buscar cidade...">
+    </div>
+    <div class="sidebar-legend">
+      <span><i class="g"></i>24hr</span>
+      <span><i class="r"></i>Sem motorista</span>
     </div>
     <nav class="city-list" id="cityList"></nav>
   </aside>
@@ -460,6 +483,11 @@
     </div>
     <div class="sub" id="cityModalSub"></div>
 
+    <div class="status-toggle">
+      <button class="status-btn g" id="statusBtn24h" data-status="24h"><i></i>24hr</button>
+      <button class="status-btn r" id="statusBtnSem" data-status="sem"><i></i>Sem motorista</button>
+    </div>
+
     <div class="section-title" style="margin-top:0;">Motoristas · madrugada</div>
     <div id="driversList"></div>
     <div class="driver-form">
@@ -542,6 +570,7 @@ const STATE = {
   reports: load('ops_reports', []),
   events: migrateEvents(load('ops_events', [])),
   drivers: migrateDrivers(load('ops_drivers', {})),
+  cityStatus: load('ops_city_status', {}),
   year: new Date().getFullYear(),
   activeCity: null,
   dayModalDate: null,
@@ -624,8 +653,10 @@ function renderSidebar(filter=''){
     grp.innerHTML = `<div class="state-label">${STATE_NAMES[uf]}</div>`;
     cities.forEach(c=>{
       const btn = document.createElement('button');
-      const hasDriver = (STATE.drivers[c.id]||[]).length > 0;
-      btn.className = 'city-btn' + (hasDriver?' has-driver':'') + (STATE.activeCity===c.id?' active':'');
+      const status = STATE.cityStatus[c.id];
+      const statusClass = status==='24h' ? ' status-24h' : status==='sem' ? ' status-sem' : '';
+      btn.className = 'city-btn' + statusClass + (STATE.activeCity===c.id?' active':'');
+      btn.title = status==='24h' ? 'Motorista 24hr' : status==='sem' ? 'Sem motorista fixo na madrugada' : '';
       btn.innerHTML = `<span>${c.name}</span><span class="dot"></span>`;
       btn.addEventListener('click', ()=> openCityModal(c.id));
       grp.appendChild(btn);
@@ -1027,11 +1058,32 @@ function openCityModal(cityId){
   document.getElementById('drvPhone').value = '';
   document.getElementById('drvFrom').value = '';
   document.getElementById('drvTo').value = '';
+  renderStatusButtons();
   renderDriversList();
   renderCityEventsList();
   document.getElementById('cityOverlay').classList.add('open');
   renderSidebar(document.getElementById('citySearch').value);
 }
+
+function renderStatusButtons(){
+  const status = STATE.cityStatus[STATE.activeCity];
+  document.getElementById('statusBtn24h').classList.toggle('active', status==='24h');
+  document.getElementById('statusBtnSem').classList.toggle('active', status==='sem');
+}
+
+function setCityStatus(value){
+  const current = STATE.cityStatus[STATE.activeCity];
+  if(current === value){
+    delete STATE.cityStatus[STATE.activeCity];
+  } else {
+    STATE.cityStatus[STATE.activeCity] = value;
+  }
+  persist('ops_city_status', STATE.cityStatus);
+  renderStatusButtons();
+  renderSidebar(document.getElementById('citySearch').value);
+}
+document.getElementById('statusBtn24h').addEventListener('click', ()=> setCityStatus('24h'));
+document.getElementById('statusBtnSem').addEventListener('click', ()=> setCityStatus('sem'));
 
 function renderDriversList(){
   const drivers = STATE.drivers[STATE.activeCity] || [];
