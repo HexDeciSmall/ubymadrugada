@@ -321,13 +321,19 @@
   .type-btn:hover{border-color:var(--text-faint);}
   .type-btn.active{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
   .guide-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;}
+  .guide-card.pinned{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber);}
   .guide-card .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .guide-card .actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
   .guide-card .ttl{font-family:var(--font-display);font-size:14.5px;font-weight:600;color:var(--text);margin-top:6px;}
   .guide-card .meta{font-size:11px;color:var(--text-faint);margin-top:3px;}
   .guide-card .body{margin-top:10px;font-size:12.5px;color:var(--text-dim);white-space:pre-wrap;line-height:1.6;}
   .guide-type-badge{display:inline-block;font-size:9.5px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
   .guide-type-badge.pdf{background:var(--crimson-glow);color:var(--crimson-bright);}
   .guide-type-badge.texto{background:rgba(124,140,240,.16);color:#7c8cf0;}
+  .pin-badge{display:inline-block;font-size:9.5px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:rgba(201,138,60,.16);color:var(--amber);margin-left:6px;}
+  .btn.pin{background:var(--surface-2);color:var(--amber);border:1px solid var(--border);}
+  .btn.pin:hover{border-color:var(--amber);}
+  .btn.pin.active{background:rgba(201,138,60,.16);border-color:var(--amber);}
 
   .toast{
     position:fixed;bottom:20px;right:20px;background:var(--surface-3);border:1px solid var(--crimson);color:var(--text);
@@ -733,6 +739,7 @@ const STATE = {
   cityStatus: load('ops_city_status', {}),
   guides: load('ops_guides', []),
   guideType: 'texto',
+  editingGuideId: null,
   year: new Date().getFullYear(),
   activeCity: null,
   dayModalDate: null,
@@ -1467,37 +1474,69 @@ function setGuideType(t){
 document.getElementById('guideTypeTexto').addEventListener('click', ()=> setGuideType('texto'));
 document.getElementById('guideTypePdf').addEventListener('click', ()=> setGuideType('pdf'));
 
-function openGuideForm(){
-  document.getElementById('guideFormTitle').textContent = 'Novo guia';
-  document.getElementById('guideTitle').value = '';
-  document.getElementById('guideContent').value = '';
-  document.getElementById('guideDescription').value = '';
-  document.getElementById('guideFile').value = '';
+function openGuideForm(editId){
   document.getElementById('guideUploadStatus').textContent = '';
-  setGuideType('texto');
+  document.getElementById('guideFile').value = '';
+  const existing = editId ? STATE.guides.find(g=>g.id===editId) : null;
+
+  if(existing){
+    STATE.editingGuideId = editId;
+    document.getElementById('guideFormTitle').textContent = 'Editando guia';
+    document.getElementById('guideTitle').value = existing.title;
+    if(existing.type==='texto'){
+      document.getElementById('guideContent').value = existing.content || '';
+      document.getElementById('guideDescription').value = '';
+      setGuideType('texto');
+    } else {
+      document.getElementById('guideContent').value = '';
+      document.getElementById('guideDescription').value = existing.description || '';
+      setGuideType('pdf');
+      document.getElementById('guideUploadStatus').textContent = `Arquivo atual: ${existing.fileName || ''} — envie um novo apenas se quiser substituí-lo.`;
+    }
+  } else {
+    STATE.editingGuideId = null;
+    document.getElementById('guideFormTitle').textContent = 'Novo guia';
+    document.getElementById('guideTitle').value = '';
+    document.getElementById('guideContent').value = '';
+    document.getElementById('guideDescription').value = '';
+    setGuideType('texto');
+  }
   document.getElementById('guideForm').style.display = 'block';
   document.getElementById('guideForm').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 document.getElementById('newGuideBtn').addEventListener('click', ()=>{
   const f = document.getElementById('guideForm');
   if(f.style.display === 'block'){ f.style.display = 'none'; return; }
-  openGuideForm();
+  openGuideForm(null);
 });
 document.getElementById('guideCancel').addEventListener('click', ()=>{
   document.getElementById('guideForm').style.display = 'none';
+  STATE.editingGuideId = null;
 });
+
+function editGuide(id){ openGuideForm(id); }
 
 document.getElementById('guideSave').addEventListener('click', async ()=>{
   const title = document.getElementById('guideTitle').value.trim();
   if(!title){ toast('Informe um título.'); return; }
+  const editId = STATE.editingGuideId;
+  const existing = editId ? STATE.guides.find(g=>g.id===editId) : null;
 
   if(STATE.guideType === 'texto'){
     const content = document.getElementById('guideContent').value.trim();
     if(!content){ toast('Escreva o conteúdo do guia.'); return; }
-    const guide = { id:'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'texto', title, content, createdAt: Date.now() };
-    STATE.guides.push(guide);
+    if(existing && existing.type==='pdf' && existing.storagePath && window.storage){
+      window.storage.ref(existing.storagePath).delete().catch(()=>{});
+    }
+    if(existing){
+      existing.type = 'texto'; existing.title = title; existing.content = content;
+      delete existing.description; delete existing.fileName; delete existing.storagePath; delete existing.downloadURL;
+    } else {
+      STATE.guides.push({ id:'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'texto', title, content, pinned:false, createdAt: Date.now() });
+    }
     persist('ops_guides', STATE.guides);
     document.getElementById('guideForm').style.display = 'none';
+    STATE.editingGuideId = null;
     renderGuides();
     toast('Guia salvo.');
     return;
@@ -1505,29 +1544,47 @@ document.getElementById('guideSave').addEventListener('click', async ()=>{
 
   // tipo PDF
   const file = document.getElementById('guideFile').files[0];
-  if(!file){ toast('Selecione um arquivo PDF.'); return; }
-  if(file.type !== 'application/pdf'){ toast('O arquivo precisa ser um PDF.'); return; }
-  if(!window.storage){ toast('⚠️ Armazenamento de arquivos indisponível no momento.'); return; }
+  const description = document.getElementById('guideDescription').value.trim();
+  if(!file && !(existing && existing.type==='pdf')){ toast('Selecione um arquivo PDF.'); return; }
+  if(file && file.type !== 'application/pdf'){ toast('O arquivo precisa ser um PDF.'); return; }
 
   const statusEl = document.getElementById('guideUploadStatus');
   const saveBtn = document.getElementById('guideSave');
+
+  if(!file){
+    // mantém o arquivo atual, só atualiza título/descrição
+    existing.type = 'pdf'; existing.title = title; existing.description = description;
+    persist('ops_guides', STATE.guides);
+    document.getElementById('guideForm').style.display = 'none';
+    STATE.editingGuideId = null;
+    renderGuides();
+    toast('Guia atualizado.');
+    return;
+  }
+
+  if(!window.storage){ toast('⚠️ Armazenamento de arquivos indisponível no momento.'); return; }
   statusEl.textContent = 'Enviando arquivo, aguarde...';
   saveBtn.disabled = true;
-  const id = 'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  const id = existing ? existing.id : 'gd_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
   const path = `guides/${id}-${file.name}`;
   try{
     const uploadSnap = await window.storage.ref(path).put(file);
     const url = await uploadSnap.ref.getDownloadURL();
-    const guide = {
-      id, type:'pdf', title,
-      description: document.getElementById('guideDescription').value.trim(),
-      fileName: file.name, storagePath: path, downloadURL: url, createdAt: Date.now()
-    };
-    STATE.guides.push(guide);
+    if(existing && existing.type==='pdf' && existing.storagePath && existing.storagePath!==path && window.storage){
+      window.storage.ref(existing.storagePath).delete().catch(()=>{});
+    }
+    if(existing){
+      existing.type='pdf'; existing.title=title; existing.description=description;
+      existing.fileName=file.name; existing.storagePath=path; existing.downloadURL=url;
+      delete existing.content;
+    } else {
+      STATE.guides.push({ id, type:'pdf', title, description, fileName:file.name, storagePath:path, downloadURL:url, pinned:false, createdAt: Date.now() });
+    }
     persist('ops_guides', STATE.guides);
     statusEl.textContent = '';
     saveBtn.disabled = false;
     document.getElementById('guideForm').style.display = 'none';
+    STATE.editingGuideId = null;
     renderGuides();
     toast('PDF enviado e guia salvo.');
   }catch(err){
@@ -1537,6 +1594,15 @@ document.getElementById('guideSave').addEventListener('click', async ()=>{
     toast('⚠️ Erro ao enviar o PDF. Verifique se o Firebase Storage está ativado.');
   }
 });
+
+function toggleGuidePin(id){
+  const g = STATE.guides.find(x=>x.id===id);
+  if(!g) return;
+  g.pinned = !g.pinned;
+  persist('ops_guides', STATE.guides);
+  renderGuides();
+  toast(g.pinned ? 'Guia fixado no topo.' : 'Guia desafixado.');
+}
 
 function deleteGuide(id){
   const guide = STATE.guides.find(g=>g.id===id);
@@ -1552,37 +1618,44 @@ function deleteGuide(id){
 function renderGuides(){
   const wrap = document.getElementById('guidesList');
   const hint = document.getElementById('guidesHint');
-  const list = [...STATE.guides].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  const list = [...STATE.guides].sort((a,b)=>{
+    const pinDiff = (b.pinned?1:0) - (a.pinned?1:0);
+    if(pinDiff !== 0) return pinDiff;
+    return (b.createdAt||0)-(a.createdAt||0);
+  });
   hint.textContent = list.length ? `${list.length} guia(s)` : '';
   if(list.length===0){
     wrap.innerHTML = `<div class="empty-state">Nenhum guia cadastrado ainda. Adicione um PDF ou escreva uma dica para a equipe.</div>`;
     return;
   }
   wrap.innerHTML = list.map(g=>{
+    const pinBtn = `<button class="btn pin small${g.pinned?' active':''}" onclick="toggleGuidePin('${g.id}')" title="${g.pinned?'Desafixar':'Fixar no topo'}">${g.pinned?'📌 Fixado':'📌 Fixar'}</button>`;
+    const editBtn = `<button class="btn ghost small" onclick="editGuide('${g.id}')">Editar</button>`;
+    const delBtn = `<button class="btn danger small" onclick="deleteGuide('${g.id}')">Excluir</button>`;
     if(g.type==='pdf'){
       return `
-      <div class="guide-card">
+      <div class="guide-card${g.pinned?' pinned':''}">
         <div class="row">
           <div>
-            <span class="guide-type-badge pdf">PDF</span>
+            <span class="guide-type-badge pdf">PDF</span>${g.pinned?'<span class="pin-badge">Fixado</span>':''}
             <div class="ttl">${escapeHtml(g.title)}</div>
             <div class="meta">${escapeHtml(g.fileName||'')}${g.description ? ' · ' + escapeHtml(g.description) : ''}</div>
           </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
+          <div class="actions">
             <a class="btn ghost small" href="${g.downloadURL}" target="_blank" rel="noopener">Abrir PDF</a>
-            <button class="btn danger small" onclick="deleteGuide('${g.id}')">Excluir</button>
+            ${pinBtn}${editBtn}${delBtn}
           </div>
         </div>
       </div>`;
     }
     return `
-    <div class="guide-card">
+    <div class="guide-card${g.pinned?' pinned':''}">
       <div class="row">
         <div>
-          <span class="guide-type-badge texto">Dica</span>
+          <span class="guide-type-badge texto">Dica</span>${g.pinned?'<span class="pin-badge">Fixado</span>':''}
           <div class="ttl">${escapeHtml(g.title)}</div>
         </div>
-        <button class="btn danger small" onclick="deleteGuide('${g.id}')">Excluir</button>
+        <div class="actions">${pinBtn}${editBtn}${delBtn}</div>
       </div>
       <div class="body">${escapeHtml(g.content)}</div>
     </div>`;
