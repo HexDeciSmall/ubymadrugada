@@ -71,11 +71,13 @@
   .city-btn.active{background:var(--crimson-glow);color:var(--crimson-bright);border-left-color:var(--crimson-bright);}
   .city-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
   .city-btn.status-24h .dot{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .city-btn.status-fds .dot{background:var(--amber);box-shadow:0 0 5px rgba(201,138,60,.65);}
   .city-btn.status-sem .dot{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
-  .sidebar-legend{display:flex;gap:14px;padding:0 18px 12px;font-size:10.5px;color:var(--text-faint);border-bottom:1px solid var(--border);}
+  .sidebar-legend{display:flex;gap:14px;padding:0 18px 12px;font-size:10.5px;color:var(--text-faint);border-bottom:1px solid var(--border);flex-wrap:wrap;row-gap:6px;}
   .sidebar-legend span{display:flex;align-items:center;gap:5px;}
   .sidebar-legend i{width:7px;height:7px;border-radius:50%;display:inline-block;}
   .sidebar-legend i.g{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .sidebar-legend i.y{background:var(--amber);box-shadow:0 0 5px rgba(201,138,60,.65);}
   .sidebar-legend i.r{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
 
   /* ===== MAIN ===== */
@@ -270,6 +272,8 @@
   .status-btn:hover{border-color:var(--text-faint);}
   .status-btn.g.active{background:rgba(61,220,132,.14);border-color:#3ddc84;color:#3ddc84;}
   .status-btn.g.active i{background:#3ddc84;box-shadow:0 0 5px rgba(61,220,132,.65);}
+  .status-btn.y.active{background:rgba(201,138,60,.16);border-color:var(--amber);color:var(--amber);}
+  .status-btn.y.active i{background:var(--amber);box-shadow:0 0 5px rgba(201,138,60,.65);}
   .status-btn.r.active{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
   .status-btn.r.active i{background:var(--crimson-bright);box-shadow:0 0 5px rgba(224,23,63,.65);}
 
@@ -314,6 +318,7 @@
     </div>
     <div class="sidebar-legend">
       <span><i class="g"></i>24hr</span>
+      <span><i class="y"></i>Fim de semana</span>
       <span><i class="r"></i>Sem motorista</span>
     </div>
     <nav class="city-list" id="cityList"></nav>
@@ -485,6 +490,7 @@
 
     <div class="status-toggle">
       <button class="status-btn g" id="statusBtn24h" data-status="24h"><i></i>24hr</button>
+      <button class="status-btn y" id="statusBtnFds" data-status="fds"><i></i>Fim de semana</button>
       <button class="status-btn r" id="statusBtnSem" data-status="sem"><i></i>Sem motorista</button>
     </div>
 
@@ -654,9 +660,9 @@ function renderSidebar(filter=''){
     cities.forEach(c=>{
       const btn = document.createElement('button');
       const status = STATE.cityStatus[c.id];
-      const statusClass = status==='24h' ? ' status-24h' : status==='sem' ? ' status-sem' : '';
+      const statusClass = status==='24h' ? ' status-24h' : status==='fds' ? ' status-fds' : status==='sem' ? ' status-sem' : '';
       btn.className = 'city-btn' + statusClass + (STATE.activeCity===c.id?' active':'');
-      btn.title = status==='24h' ? 'Motorista 24hr' : status==='sem' ? 'Sem motorista fixo na madrugada' : '';
+      btn.title = status==='24h' ? 'Motorista 24hr' : status==='fds' ? 'Motorista apenas fim de semana' : status==='sem' ? 'Sem motorista fixo na madrugada' : '';
       btn.innerHTML = `<span>${c.name}</span><span class="dot"></span>`;
       btn.addEventListener('click', ()=> openCityModal(c.id));
       grp.appendChild(btn);
@@ -1068,6 +1074,7 @@ function openCityModal(cityId){
 function renderStatusButtons(){
   const status = STATE.cityStatus[STATE.activeCity];
   document.getElementById('statusBtn24h').classList.toggle('active', status==='24h');
+  document.getElementById('statusBtnFds').classList.toggle('active', status==='fds');
   document.getElementById('statusBtnSem').classList.toggle('active', status==='sem');
 }
 
@@ -1083,6 +1090,7 @@ function setCityStatus(value){
   renderSidebar(document.getElementById('citySearch').value);
 }
 document.getElementById('statusBtn24h').addEventListener('click', ()=> setCityStatus('24h'));
+document.getElementById('statusBtnFds').addEventListener('click', ()=> setCityStatus('fds'));
 document.getElementById('statusBtnSem').addEventListener('click', ()=> setCityStatus('sem'));
 
 function renderDriversList(){
