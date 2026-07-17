@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Central de Operações</title>
+<title>Uby · Central de Operações</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -21,6 +21,7 @@
     --crimson-bright:#e0173f;
     --crimson-glow:rgba(224,23,63,0.16);
     --amber:#c98a3c;
+    --whats:#3ddc84;
     --font-display:'Space Grotesk',sans-serif;
     --font-body:'Inter',sans-serif;
     --font-mono:'JetBrains Mono',monospace;
@@ -69,7 +70,7 @@
   .city-btn:hover{background:var(--surface-2);color:var(--text);}
   .city-btn.active{background:var(--crimson-glow);color:var(--crimson-bright);border-left-color:var(--crimson-bright);}
   .city-btn .dot{width:5px;height:5px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
-  .city-btn.has-driver .dot{background:var(--amber);}
+  .city-btn.has-driver .dot{background:var(--whats);}
 
   /* ===== MAIN ===== */
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -85,7 +86,6 @@
   #pulseSvg{display:block;width:100%;height:46px;}
   .pulse-line{fill:none;stroke:var(--crimson-bright);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
   .pulse-fill{fill:url(#pulseGrad);opacity:.5;}
-  .pulse-dot{fill:var(--crimson-bright);}
 
   .tabs{display:flex;gap:2px;margin-top:16px;}
   .tab-btn{
@@ -123,6 +123,8 @@
   .btn.small{padding:5px 10px;font-size:11.5px;}
   .btn.danger{background:var(--surface-2);color:#e0577b;border:1px solid var(--border);}
   .btn.danger:hover{border-color:#e0577b;}
+  .btn.whats{background:var(--surface-2);color:var(--whats);border:1px solid var(--border);}
+  .btn.whats:hover{border-color:var(--whats);}
   input[type=file]{display:none;}
 
   .section-title{font-family:var(--font-display);font-size:15px;font-weight:600;margin:26px 0 12px;display:flex;align-items:center;justify-content:space-between;}
@@ -137,22 +139,37 @@
   tbody tr:hover td{background:var(--surface);color:var(--text);}
   td.num{font-family:var(--font-mono);}
   .empty-state{padding:40px 20px;text-align:center;color:var(--text-faint);font-size:12.5px;border:1px dashed var(--border);border-radius:8px;}
+  .expand-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);width:26px;height:26px;border-radius:5px;font-size:11px;}
+  .expand-btn:hover{border-color:var(--crimson);color:var(--text);}
+  .expand-btn.open{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
+  tr.detail-row{display:none;}
+  tr.detail-row.open{display:table-row;}
+  tr.detail-row td{background:var(--surface);padding:12px 16px 16px;}
+  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .detail-item .dt-label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+  .detail-item .dt-text{font-size:12.5px;color:var(--text-dim);line-height:1.5;white-space:pre-wrap;}
+  .detail-item .dt-text.empty{color:var(--text-faint);font-style:italic;}
 
-  .manual-form{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;}
+  .manual-form{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px;}
   .manual-form label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
-  .manual-form input,.manual-form select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:7px 8px;border-radius:5px;font-size:12px;outline:none;}
-  .manual-form input:focus,.manual-form select:focus{border-color:var(--crimson);}
-  .manual-form .full{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;}
+  .manual-form input,.manual-form select,.manual-form textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:7px 8px;border-radius:5px;font-size:12.5px;outline:none;font-family:var(--font-body);}
+  .manual-form input:focus,.manual-form select:focus,.manual-form textarea:focus{border-color:var(--crimson);}
+  .manual-form textarea{resize:vertical;min-height:44px;}
+  .manual-form .top-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .metric-block{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start;margin-bottom:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .metric-block:first-of-type{border-top:none;padding-top:0;}
+  .metric-block .m-label{font-size:11.5px;color:var(--text);font-weight:600;text-transform:none;letter-spacing:0;padding-top:7px;}
+  .manual-form .full{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
 
   /* ===== CALENDAR ===== */
-  .cal-controls{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+  .cal-controls{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
   .cal-controls .yr{font-family:var(--font-display);font-size:20px;font-weight:600;min-width:64px;text-align:center;}
-  .cal-controls button{background:var(--surface-2);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:6px;font-size:14px;}
-  .cal-controls button:hover{border-color:var(--crimson);}
+  .cal-controls button.nav{background:var(--surface-2);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:6px;font-size:14px;}
+  .cal-controls button.nav:hover{border-color:var(--crimson);}
   .legend{display:flex;gap:16px;margin-left:auto;font-size:11.5px;color:var(--text-faint);align-items:center;}
-  .legend .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle;}
   .sw.feriado{background:var(--crimson-bright);}
-  .sw.evento{background:var(--amber);}
+  .sw.evento{background:rgba(201,138,60,.5);box-shadow:inset 0 0 0 1px var(--amber);}
 
   .months-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
   @media(max-width:1100px){.months-grid{grid-template-columns:repeat(2,1fr);}}
@@ -165,15 +182,19 @@
   .weekdays div{font-size:9px;text-align:center;color:var(--text-faint);font-family:var(--font-mono);}
   .days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
   .day-cell{
-    aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:4px;
-    color:var(--text-dim);position:relative;background:transparent;
+    aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:5px;
+    color:var(--text-dim);position:relative;background:transparent;font-weight:500;
   }
   .day-cell.blank{visibility:hidden;}
   .day-cell.clickable{cursor:pointer;}
-  .day-cell.clickable:hover{background:var(--surface-2);}
-  .day-cell.today{outline:1px solid var(--crimson-bright);color:var(--text);font-weight:600;}
-  .day-cell .dots{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px;}
-  .day-cell .dots i{width:3.5px;height:3.5px;border-radius:50%;display:block;}
+  .day-cell.clickable:hover{background:var(--surface-3);}
+  .day-cell.today{box-shadow:inset 0 0 0 1px var(--text-dim);}
+  .day-cell.has-evento{background:rgba(201,138,60,.22);color:var(--text);font-weight:600;box-shadow:inset 0 0 0 1px rgba(201,138,60,.55);}
+  .day-cell.has-feriado{background:var(--crimson-bright);color:#fff;font-weight:700;box-shadow:none;}
+  .day-cell.has-feriado.today{box-shadow:inset 0 0 0 2px #fff;}
+  .day-cell.has-feriado.has-evento::after{
+    content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--amber);
+  }
 
   /* ===== MODAL ===== */
   .overlay{
@@ -182,8 +203,8 @@
   }
   .overlay.open{display:flex;}
   .modal{
-    background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:460px;
-    max-height:86vh;overflow-y:auto;padding:22px 22px 20px;
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:480px;
+    max-height:88vh;overflow-y:auto;padding:22px 22px 20px;
   }
   .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
   .modal-head h2{font-family:var(--font-display);font-size:17px;margin:0;font-weight:600;}
@@ -198,14 +219,27 @@
     border-radius:5px;font-size:13px;outline:none;
   }
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--crimson);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:var(--text-dim);}
+  .toggle-row input{width:auto;accent-color:var(--crimson-bright);}
 
   .city-check-grid{
     max-height:170px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
     padding:8px 10px;display:flex;flex-direction:column;gap:2px;
   }
+  .city-check-grid.disabled{opacity:.35;pointer-events:none;}
   .city-check-grid .grp{font-family:var(--font-mono);font-size:9.5px;color:var(--text-faint);text-transform:uppercase;margin:6px 0 2px;letter-spacing:.08em;}
   .city-check-grid label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-dim);text-transform:none;letter-spacing:0;padding:2px 0;cursor:pointer;}
   .city-check-grid input{width:auto;accent-color:var(--crimson-bright);}
+
+  .period-chip{
+    display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border);
+    border-radius:14px;padding:4px 6px 4px 10px;font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin:0 6px 6px 0;
+  }
+  .period-chip button{background:none;border:none;color:var(--text-faint);font-size:13px;padding:0 2px;line-height:1;}
+  .period-chip button:hover{color:var(--crimson-bright);}
+  .periods-wrap{margin-bottom:8px;}
 
   .event-item{
     background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:8px;
@@ -220,8 +254,16 @@
   .tag{font-size:10px;background:var(--surface-3);color:var(--text-dim);padding:2px 8px;border-radius:10px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
 
-  .driver-box{display:flex;gap:8px;margin-bottom:20px;}
-  .driver-box input{flex:1;}
+  .driver-form{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;}
+  .driver-form .field-row{margin-bottom:10px;}
+  .driver-form .full-actions{display:flex;justify-content:flex-end;}
+  .driver-card{
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .driver-card .info strong{display:block;font-size:13px;color:var(--text);}
+  .driver-card .info .meta{font-size:11px;color:var(--text-faint);margin-top:3px;font-family:var(--font-mono);}
+  .driver-card .actions{display:flex;gap:6px;flex-shrink:0;}
 
   .toast{
     position:fixed;bottom:20px;right:20px;background:var(--surface-3);border:1px solid var(--crimson);color:var(--text);
@@ -235,6 +277,7 @@
     .sidebar.open{margin-left:0;box-shadow:0 0 40px rgba(0,0,0,.5);}
     .menu-toggle{display:flex;}
     .manual-form{grid-template-columns:repeat(2,1fr);}
+    .field-row{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -243,7 +286,7 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
-      <div class="mark">Operações · Rota</div>
+      <div class="mark">Uby · Operações</div>
       <h1>Central de Cidades</h1>
       <div class="sub" id="cityCount">65 municípios atendidos</div>
     </div>
@@ -259,7 +302,7 @@
         <div>
           <button class="menu-toggle" id="menuToggle">☰</button>
           <h2>Painel de Operações</h2>
-          <div class="sub" id="topbarSub">Visão geral diária das rotas atendidas</div>
+          <div class="sub" id="topbarSub">Visão geral diária das corridas atendidas</div>
         </div>
       </div>
       <div class="pulse-wrap">
@@ -288,7 +331,7 @@
       <div class="import-bar">
         <div class="txt">
           <strong>Importar relatório diário (.xlsx / .csv)</strong>
-          <span>Colunas esperadas: Data · Corridas Críticas · Problemas com Motoristas · Agendamentos · Fatores Externos · (Cidade opcional)</span>
+          <span>Colunas esperadas: Data · Corridas Críticas · Problemas com Motoristas · Agendamentos · Fatores Externos · (Cidade opcional). Para relatos escritos, adicione colunas "Detalhes Corridas Críticas", "Detalhes Problemas Motoristas", "Detalhes Agendamentos", "Detalhes Fatores Externos".</span>
         </div>
         <label class="btn" for="fileInput">Importar planilha</label>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
@@ -296,12 +339,40 @@
       </div>
 
       <div class="manual-form" id="manualForm" style="display:none;">
-        <div><label>Data</label><input type="date" id="mDate"></div>
-        <div><label>Cidade (opcional)</label><input type="text" id="mCidade" placeholder="ex: Muzambinho"></div>
-        <div><label>Corridas críticas</label><input type="number" id="mCriticas" value="0"></div>
-        <div><label>Problemas motoristas</label><input type="number" id="mProblemas" value="0"></div>
-        <div><label>Agendamentos</label><input type="number" id="mAgendamentos" value="0"></div>
-        <div><label>Fatores externos</label><input type="number" id="mExternos" value="0"></div>
+        <div class="top-row">
+          <div><label>Data</label><input type="date" id="mDate"></div>
+          <div><label>Cidade (opcional)</label><input type="text" id="mCidade" placeholder="ex: Muzambinho"></div>
+        </div>
+
+        <div class="metric-block">
+          <div class="m-label">Corridas críticas</div>
+          <div>
+            <input type="number" id="mCriticas" value="0" style="margin-bottom:6px;">
+            <textarea id="mCriticasObs" placeholder="O que aconteceu? ex: corrida cancelada por atraso, passageiro relatou problema com o motorista..."></textarea>
+          </div>
+        </div>
+        <div class="metric-block">
+          <div class="m-label">Problemas c/ motoristas</div>
+          <div>
+            <input type="number" id="mProblemas" value="0" style="margin-bottom:6px;">
+            <textarea id="mProblemasObs" placeholder="Detalhes do ocorrido com o(s) motorista(s)..."></textarea>
+          </div>
+        </div>
+        <div class="metric-block">
+          <div class="m-label">Agendamentos</div>
+          <div>
+            <input type="number" id="mAgendamentos" value="0" style="margin-bottom:6px;">
+            <textarea id="mAgendamentosObs" placeholder="Observações sobre os agendamentos do dia..."></textarea>
+          </div>
+        </div>
+        <div class="metric-block">
+          <div class="m-label">Fatores externos</div>
+          <div>
+            <input type="number" id="mExternos" value="0" style="margin-bottom:6px;">
+            <textarea id="mExternosObs" placeholder="ex: chuva forte, bloqueio de via, evento na cidade..."></textarea>
+          </div>
+        </div>
+
         <div class="full">
           <button class="btn ghost small" id="manualCancel">Cancelar</button>
           <button class="btn small" id="manualSave">Salvar registro</button>
@@ -315,9 +386,10 @@
     <!-- CALENDAR -->
     <section class="tab-panel" id="tab-calendar">
       <div class="cal-controls">
-        <button id="prevYear">‹</button>
+        <button class="nav" id="prevYear">‹</button>
         <div class="yr" id="yearLabel"></div>
-        <button id="nextYear">›</button>
+        <button class="nav" id="nextYear">›</button>
+        <button class="btn ghost small" id="newEventBtn">+ Novo feriado/evento</button>
         <div class="legend">
           <span><i class="sw feriado"></i>Feriado</span>
           <span><i class="sw evento"></i>Evento</span>
@@ -350,8 +422,26 @@
         <option value="evento">Evento</option>
       </select>
     </div>
+
+    <div class="field">
+      <label>Período</label>
+      <div class="field-row">
+        <input type="date" id="evPeriodStart">
+        <input type="date" id="evPeriodEnd" placeholder="fim (opcional)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <span class="hint" style="font-size:11px;color:var(--text-faint);">Deixe "fim" em branco para um único dia. Use "+ período" para datas não sequenciais.</span>
+        <button class="btn ghost small" id="addPeriodBtn" type="button">+ período</button>
+      </div>
+      <div class="periods-wrap" id="periodsChips"></div>
+    </div>
+
     <div class="field">
       <label>Cidades relacionadas</label>
+      <div class="toggle-row">
+        <input type="checkbox" id="evAllCities">
+        <label for="evAllCities" style="text-transform:none;letter-spacing:0;font-size:12px;margin:0;">Todas as cidades</label>
+      </div>
       <div class="city-check-grid" id="evCityGrid"></div>
     </div>
     <div class="modal-actions">
@@ -370,15 +460,23 @@
     </div>
     <div class="sub" id="cityModalSub"></div>
 
-    <div class="field">
-      <label>Motorista responsável pela madrugada</label>
-      <div class="driver-box">
-        <input type="text" id="driverInput" placeholder="Nome do motorista">
-        <button class="btn small" id="driverSave">Salvar</button>
+    <div class="section-title" style="margin-top:0;">Motoristas · madrugada</div>
+    <div id="driversList"></div>
+    <div class="driver-form">
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0;"><label>Nome</label><input type="text" id="drvName" placeholder="Nome do motorista"></div>
+        <div class="field" style="margin-bottom:0;"><label>Telefone</label><input type="text" id="drvPhone" placeholder="(35) 99999-9999"></div>
+      </div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0;"><label>De</label><input type="time" id="drvFrom"></div>
+        <div class="field" style="margin-bottom:0;"><label>Até</label><input type="time" id="drvTo"></div>
+      </div>
+      <div class="full-actions" style="margin-top:10px;">
+        <button class="btn small" id="drvSave">+ Adicionar motorista</button>
       </div>
     </div>
 
-    <div class="section-title" style="margin-top:6px;">Feriados e eventos</div>
+    <div class="section-title">Feriados e eventos</div>
     <div id="cityEventsList"></div>
   </div>
 </div>
@@ -411,6 +509,7 @@ const STATE_ORDER = ["MG","SP","MS","PR"];
 const STATE_NAMES = {MG:"Minas Gerais",SP:"São Paulo",MS:"Mato Grosso do Sul",PR:"Paraná"};
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const WEEKDAYS = ["D","S","T","Q","Q","S","S"];
+const ALL_CITIES_TAG = "ALL";
 
 /* ======================= PERSISTÊNCIA ======================= */
 function load(key, fallback){
@@ -419,13 +518,34 @@ function load(key, fallback){
 }
 function persist(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
+/* migração de formatos antigos */
+function migrateEvents(raw){
+  return raw.map(ev=>{
+    if(ev.periods) return ev; // já no formato novo
+    return { id: ev.id, title: ev.title, type: ev.type,
+      cities: ev.cities || [], periods: [{start: ev.date, end: ev.date}] };
+  });
+}
+function migrateDrivers(raw){
+  const out = {};
+  Object.keys(raw).forEach(cid=>{
+    const v = raw[cid];
+    if(Array.isArray(v)){ out[cid] = v; return; }
+    if(typeof v === 'string' && v.trim()){
+      out[cid] = [{ id:'drv_'+Date.now()+Math.random().toString(36).slice(2,6), name:v, phone:'', from:'', to:'' }];
+    }
+  });
+  return out;
+}
+
 const STATE = {
   reports: load('ops_reports', []),
-  events: load('ops_events', []),
-  drivers: load('ops_drivers', {}),
+  events: migrateEvents(load('ops_events', [])),
+  drivers: migrateDrivers(load('ops_drivers', {})),
   year: new Date().getFullYear(),
   activeCity: null,
   dayModalDate: null,
+  pendingPeriods: [],
 };
 
 function toast(msg){
@@ -468,11 +588,27 @@ function parseDateCell(v){
   }
   return null;
 }
-function cityIdFromName(name){
-  if(!name) return null;
-  const n = normalize(name);
-  const found = CITIES.find(c => normalize(c.name) === n || normalize(c.name).includes(n) || n.includes(normalize(c.name)));
-  return found ? found.id : null;
+function eventOccursOn(ev, dateStr){
+  return ev.periods.some(p=> dateStr >= p.start && dateStr <= (p.end || p.start));
+}
+function periodLabel(p){
+  return p.end && p.end !== p.start ? `${fmtDate(p.start)} a ${fmtDate(p.end)}` : fmtDate(p.start);
+}
+function eventCitiesLabel(ev){
+  if(ev.cities.includes(ALL_CITIES_TAG)) return 'Todas as cidades';
+  return ev.cities.map(cid=>{ const c = CITIES.find(x=>x.id===cid); return c ? c.name : cid; }).join(', ') || 'Nenhuma cidade';
+}
+function waLink(phone){
+  let digits = String(phone||'').replace(/\D/g,'');
+  if(!digits) return null;
+  if(!digits.startsWith('55')) digits = '55' + digits;
+  return `https://wa.me/${digits}`;
+}
+function fmtPhone(phone){
+  const d = String(phone||'').replace(/\D/g,'');
+  if(d.length===11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return phone || '';
 }
 
 /* ======================= SIDEBAR ======================= */
@@ -488,7 +624,7 @@ function renderSidebar(filter=''){
     grp.innerHTML = `<div class="state-label">${STATE_NAMES[uf]}</div>`;
     cities.forEach(c=>{
       const btn = document.createElement('button');
-      const hasDriver = !!STATE.drivers[c.id];
+      const hasDriver = (STATE.drivers[c.id]||[]).length > 0;
       btn.className = 'city-btn' + (hasDriver?' has-driver':'') + (STATE.activeCity===c.id?' active':'');
       btn.innerHTML = `<span>${c.name}</span><span class="dot"></span>`;
       btn.addEventListener('click', ()=> openCityModal(c.id));
@@ -543,6 +679,7 @@ function importRows(rows){
     const dateStr = parseDateCell(map['data']);
     if(!dateStr){ skipped++; return; }
     const cidade = map['cidade'] ? String(map['cidade']).trim() : null;
+    const txt = v => v==null ? '' : String(v).trim();
     const entry = {
       date: dateStr,
       cidade: cidade || null,
@@ -550,6 +687,10 @@ function importRows(rows){
       problemas: toNum(map['problemas com motoristas'] ?? map['problemas']),
       agendamentos: toNum(map['agendamentos']),
       externos: toNum(map['fatores externos'] ?? map['externos']),
+      criticasObs: txt(map['detalhes corridas criticas'] ?? map['observacoes corridas criticas'] ?? map['obs corridas criticas'] ?? map['descricao corridas criticas']),
+      problemasObs: txt(map['detalhes problemas motoristas'] ?? map['observacoes problemas motoristas'] ?? map['obs problemas motoristas'] ?? map['descricao problemas motoristas']),
+      agendamentosObs: txt(map['detalhes agendamentos'] ?? map['observacoes agendamentos'] ?? map['obs agendamentos'] ?? map['descricao agendamentos']),
+      externosObs: txt(map['detalhes fatores externos'] ?? map['observacoes fatores externos'] ?? map['obs fatores externos'] ?? map['descricao fatores externos']),
     };
     const idx = STATE.reports.findIndex(r=> r.date===entry.date && (r.cidade||null)===(entry.cidade||null));
     if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
@@ -579,12 +720,17 @@ document.getElementById('manualSave').addEventListener('click', ()=>{
     problemas: toNum(document.getElementById('mProblemas').value),
     agendamentos: toNum(document.getElementById('mAgendamentos').value),
     externos: toNum(document.getElementById('mExternos').value),
+    criticasObs: document.getElementById('mCriticasObs').value.trim(),
+    problemasObs: document.getElementById('mProblemasObs').value.trim(),
+    agendamentosObs: document.getElementById('mAgendamentosObs').value.trim(),
+    externosObs: document.getElementById('mExternosObs').value.trim(),
   };
   const idx = STATE.reports.findIndex(r=> r.date===entry.date && (r.cidade||null)===(entry.cidade||null));
   if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
   persist('ops_reports', STATE.reports);
   renderDashboard();
   document.getElementById('manualForm').style.display = 'none';
+  ['mCriticasObs','mProblemasObs','mAgendamentosObs','mExternosObs'].forEach(id=> document.getElementById(id).value = '');
   toast('Registro salvo.');
 });
 
@@ -647,26 +793,48 @@ function renderReportsTable(){
     wrap.innerHTML = `<div class="empty-state">Nenhum registro ainda. Importe uma planilha ou adicione um registro manual.</div>`;
     return;
   }
+  const rowId = (r,i) => `rep_${i}`;
   wrap.innerHTML = `
     <table>
       <thead><tr>
-        <th>Data</th><th>Cidade</th><th>Críticas</th><th>Problemas</th><th>Agendamentos</th><th>Externos</th><th></th>
+        <th></th><th>Data</th><th>Cidade</th><th>Críticas</th><th>Problemas</th><th>Agendamentos</th><th>Externos</th><th></th>
       </tr></thead>
       <tbody>
-        ${sorted.map(r=>`
+        ${sorted.map((r,i)=>{
+          const cidadeArg = r.cidade ? `'${r.cidade.replace(/'/g,"\\'")}'` : 'null';
+          const hasObs = r.criticasObs || r.problemasObs || r.agendamentosObs || r.externosObs;
+          return `
           <tr>
+            <td><button class="expand-btn" onclick="toggleDetail('${rowId(r,i)}')" title="Ver detalhes">${hasObs ? '📝' : '⋯'}</button></td>
             <td>${fmtDate(r.date)}</td>
             <td>${r.cidade || '<span style="color:var(--text-faint)">Geral</span>'}</td>
             <td class="num">${r.criticas}</td>
             <td class="num">${r.problemas}</td>
             <td class="num">${r.agendamentos}</td>
             <td class="num">${r.externos}</td>
-            <td><button class="btn danger small" onclick="deleteReport('${r.date}', ${r.cidade ? `'${r.cidade.replace(/'/g,"\\'")}'` : 'null'})">Excluir</button></td>
+            <td><button class="btn danger small" onclick="deleteReport('${r.date}', ${cidadeArg})">Excluir</button></td>
           </tr>
-        `).join('')}
+          <tr class="detail-row" id="${rowId(r,i)}">
+            <td colspan="8">
+              <div class="detail-grid">
+                <div class="detail-item"><div class="dt-label">Corridas críticas</div><div class="dt-text${r.criticasObs?'':' empty'}">${r.criticasObs || 'Sem detalhes registrados.'}</div></div>
+                <div class="detail-item"><div class="dt-label">Problemas c/ motoristas</div><div class="dt-text${r.problemasObs?'':' empty'}">${r.problemasObs || 'Sem detalhes registrados.'}</div></div>
+                <div class="detail-item"><div class="dt-label">Agendamentos</div><div class="dt-text${r.agendamentosObs?'':' empty'}">${r.agendamentosObs || 'Sem detalhes registrados.'}</div></div>
+                <div class="detail-item"><div class="dt-label">Fatores externos</div><div class="dt-text${r.externosObs?'':' empty'}">${r.externosObs || 'Sem detalhes registrados.'}</div></div>
+              </div>
+            </td>
+          </tr>
+        `;}).join('')}
       </tbody>
     </table>
   `;
+}
+
+function toggleDetail(id){
+  const row = document.getElementById(id);
+  row.classList.toggle('open');
+  const btn = row.previousElementSibling.querySelector('.expand-btn');
+  btn.classList.toggle('open', row.classList.contains('open'));
 }
 
 function renderDashboard(){
@@ -701,17 +869,17 @@ function renderCalendar(){
     }
     for(let day=1; day<=daysInMonth; day++){
       const ds = `${STATE.year}-${pad(m+1)}-${pad(day)}`;
-      const dayEvents = STATE.events.filter(ev=>ev.date===ds);
+      const dayEvents = STATE.events.filter(ev=> eventOccursOn(ev, ds));
+      const hasFeriado = dayEvents.some(e=>e.type==='feriado');
+      const hasEvento = dayEvents.some(e=>e.type==='evento');
       const cell = document.createElement('div');
-      cell.className = 'day-cell clickable' + (ds===today ? ' today' : '');
-      let dotsHtml = '';
+      cell.className = 'day-cell clickable'
+        + (ds===today ? ' today' : '')
+        + (hasFeriado ? ' has-feriado' : '')
+        + (hasEvento ? ' has-evento' : '');
+      cell.textContent = day;
       if(dayEvents.length){
-        const types = [...new Set(dayEvents.map(e=>e.type))];
-        dotsHtml = `<div class="dots">${types.map(t=>`<i style="background:${t==='feriado'?'var(--crimson-bright)':'var(--amber)'}"></i>`).join('')}</div>`;
-      }
-      cell.innerHTML = `${day}${dotsHtml}`;
-      if(dayEvents.length){
-        cell.title = dayEvents.map(e=> `${e.title} (${e.cities.length? e.cities.map(cid=>{const c=CITIES.find(x=>x.id===cid); return c?c.name:cid;}).join(', ') : 'todas as cidades'})`).join(' | ');
+        cell.title = dayEvents.map(e=> `${e.title} (${eventCitiesLabel(e)})`).join(' | ');
       }
       cell.addEventListener('click', ()=> openDayModal(ds));
       daysGrid.appendChild(cell);
@@ -721,8 +889,9 @@ function renderCalendar(){
 }
 document.getElementById('prevYear').addEventListener('click', ()=>{ STATE.year--; renderCalendar(); });
 document.getElementById('nextYear').addEventListener('click', ()=>{ STATE.year++; renderCalendar(); });
+document.getElementById('newEventBtn').addEventListener('click', ()=> openDayModal(todayStr()));
 
-/* ===== Day modal ===== */
+/* ===== Cidades: grid de checkboxes ===== */
 function buildCityCheckGrid(containerId, checkedIds=[]){
   const el = document.getElementById(containerId);
   let html = '';
@@ -735,18 +904,58 @@ function buildCityCheckGrid(containerId, checkedIds=[]){
   el.innerHTML = html;
 }
 
+document.getElementById('evAllCities').addEventListener('change', e=>{
+  document.getElementById('evCityGrid').classList.toggle('disabled', e.target.checked);
+});
+
+/* ===== Day modal (feriados/eventos) ===== */
 function openDayModal(dateStr){
   STATE.dayModalDate = dateStr;
-  document.getElementById('dayModalTitle').textContent = fmtDate(dateStr);
+  STATE.pendingPeriods = [{start: dateStr, end: dateStr}];
+  document.getElementById('dayModalTitle').textContent = 'Feriados e eventos · ' + fmtDate(dateStr);
   document.getElementById('evTitle').value = '';
   document.getElementById('evType').value = 'feriado';
+  document.getElementById('evAllCities').checked = false;
+  document.getElementById('evCityGrid').classList.remove('disabled');
+  document.getElementById('evPeriodStart').value = dateStr;
+  document.getElementById('evPeriodEnd').value = '';
   buildCityCheckGrid('evCityGrid', []);
+  renderPeriodsChips();
   renderDayEventsList();
   document.getElementById('dayOverlay').classList.add('open');
 }
 
+function renderPeriodsChips(){
+  const el = document.getElementById('periodsChips');
+  el.innerHTML = STATE.pendingPeriods.map((p,i)=>`
+    <span class="period-chip">${periodLabel(p)}${STATE.pendingPeriods.length>1?` <button data-i="${i}" class="rm-period">×</button>`:''}</span>
+  `).join('');
+  el.querySelectorAll('.rm-period').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      STATE.pendingPeriods.splice(Number(btn.dataset.i),1);
+      renderPeriodsChips();
+    });
+  });
+}
+
+document.getElementById('addPeriodBtn').addEventListener('click', ()=>{
+  const start = document.getElementById('evPeriodStart').value;
+  const end = document.getElementById('evPeriodEnd').value;
+  if(!start){ toast('Informe ao menos a data de início.'); return; }
+  if(end && end < start){ toast('A data final não pode ser antes da inicial.'); return; }
+  // se é o primeiro período (ainda igual ao dia clicado) e não foi alterado, substitui; senão adiciona
+  if(STATE.pendingPeriods.length===1 && STATE.pendingPeriods[0].start===STATE.dayModalDate && STATE.pendingPeriods[0].end===STATE.dayModalDate && start===STATE.dayModalDate && !end){
+    STATE.pendingPeriods[0] = {start, end: end || start};
+  } else {
+    STATE.pendingPeriods.push({start, end: end || start});
+  }
+  document.getElementById('evPeriodStart').value = '';
+  document.getElementById('evPeriodEnd').value = '';
+  renderPeriodsChips();
+});
+
 function renderDayEventsList(){
-  const list = STATE.events.filter(e=>e.date===STATE.dayModalDate);
+  const list = STATE.events.filter(e=> eventOccursOn(e, STATE.dayModalDate));
   const el = document.getElementById('dayEventsList');
   if(list.length===0){
     el.innerHTML = `<div class="empty-state">Nenhum feriado ou evento cadastrado para esta data.</div>`;
@@ -758,10 +967,11 @@ function renderDayEventsList(){
         <div>
           <span class="badge ${ev.type}">${ev.type}</span>
           <div class="ttl" style="margin-top:5px;">${ev.title}</div>
+          <div class="date">${ev.periods.map(periodLabel).join(' · ')}</div>
         </div>
         <button class="btn danger small" onclick="deleteEvent('${ev.id}')">Excluir</button>
       </div>
-      <div class="tags">${ev.cities.length ? ev.cities.map(cid=>{const c=CITIES.find(x=>x.id===cid); return `<span class="tag">${c?c.name:cid}</span>`;}).join('') : '<span class="tag">Todas as cidades</span>'}</div>
+      <div class="tags"><span class="tag">${eventCitiesLabel(ev)}</span></div>
     </div>
   `).join('');
 }
@@ -770,12 +980,28 @@ document.getElementById('evSave').addEventListener('click', ()=>{
   const title = document.getElementById('evTitle').value.trim();
   if(!title){ toast('Informe um título.'); return; }
   const type = document.getElementById('evType').value;
-  const cities = [...document.querySelectorAll('#evCityGrid input:checked')].map(i=>i.value);
-  const ev = { id: 'ev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), date: STATE.dayModalDate, title, type, cities };
+  const allCities = document.getElementById('evAllCities').checked;
+  const cities = allCities ? [ALL_CITIES_TAG] : [...document.querySelectorAll('#evCityGrid input:checked')].map(i=>i.value);
+
+  // garante que o período que ainda está nos campos (não adicionado) entra também
+  const start = document.getElementById('evPeriodStart').value;
+  const end = document.getElementById('evPeriodEnd').value;
+  let periods = [...STATE.pendingPeriods];
+  if(start){
+    const already = periods.some(p=>p.start===start && p.end===(end||start));
+    if(!already) periods.push({start, end: end || start});
+  }
+  if(periods.length===0){ toast('Informe ao menos um período.'); return; }
+
+  const ev = { id: 'ev_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), title, type, cities, periods };
   STATE.events.push(ev);
   persist('ops_events', STATE.events);
+
   document.getElementById('evTitle').value = '';
-  buildCityCheckGrid('evCityGrid', []);
+  STATE.pendingPeriods = [{start: STATE.dayModalDate, end: STATE.dayModalDate}];
+  document.getElementById('evPeriodStart').value = STATE.dayModalDate;
+  document.getElementById('evPeriodEnd').value = '';
+  renderPeriodsChips();
   renderDayEventsList();
   renderCalendar();
   toast('Evento salvo.');
@@ -797,40 +1023,92 @@ function openCityModal(cityId){
   if(!c) return;
   document.getElementById('cityModalTitle').textContent = c.name;
   document.getElementById('cityModalSub').textContent = `${STATE_NAMES[c.uf]} · ${c.uf}`;
-  document.getElementById('driverInput').value = STATE.drivers[cityId] || '';
+  document.getElementById('drvName').value = '';
+  document.getElementById('drvPhone').value = '';
+  document.getElementById('drvFrom').value = '';
+  document.getElementById('drvTo').value = '';
+  renderDriversList();
   renderCityEventsList();
   document.getElementById('cityOverlay').classList.add('open');
   renderSidebar(document.getElementById('citySearch').value);
 }
 
-document.getElementById('driverSave').addEventListener('click', ()=>{
-  const name = document.getElementById('driverInput').value.trim();
-  if(name) STATE.drivers[STATE.activeCity] = name;
-  else delete STATE.drivers[STATE.activeCity];
+function renderDriversList(){
+  const drivers = STATE.drivers[STATE.activeCity] || [];
+  const el = document.getElementById('driversList');
+  if(drivers.length===0){
+    el.innerHTML = `<div class="empty-state">Nenhum motorista cadastrado para a madrugada desta cidade.</div>`;
+    return;
+  }
+  el.innerHTML = drivers.map(d=>{
+    const link = waLink(d.phone);
+    const horario = (d.from || d.to) ? `${d.from||'--:--'} às ${d.to||'--:--'}` : '';
+    return `
+    <div class="driver-card">
+      <div class="info">
+        <strong>${d.name}</strong>
+        <div class="meta">${fmtPhone(d.phone)}${horario ? ' · ' + horario : ''}</div>
+      </div>
+      <div class="actions">
+        ${link ? `<a class="btn whats small" href="${link}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        <button class="btn danger small" onclick="deleteDriver('${d.id}')">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('drvSave').addEventListener('click', ()=>{
+  const name = document.getElementById('drvName').value.trim();
+  if(!name){ toast('Informe o nome do motorista.'); return; }
+  const driver = {
+    id: 'drv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    name,
+    phone: document.getElementById('drvPhone').value.trim(),
+    from: document.getElementById('drvFrom').value,
+    to: document.getElementById('drvTo').value,
+  };
+  if(!STATE.drivers[STATE.activeCity]) STATE.drivers[STATE.activeCity] = [];
+  STATE.drivers[STATE.activeCity].push(driver);
   persist('ops_drivers', STATE.drivers);
+  document.getElementById('drvName').value = '';
+  document.getElementById('drvPhone').value = '';
+  document.getElementById('drvFrom').value = '';
+  document.getElementById('drvTo').value = '';
+  renderDriversList();
   renderSidebar(document.getElementById('citySearch').value);
-  toast('Motorista da madrugada atualizado.');
+  toast('Motorista adicionado.');
 });
 
+function deleteDriver(id){
+  STATE.drivers[STATE.activeCity] = (STATE.drivers[STATE.activeCity]||[]).filter(d=>d.id!==id);
+  persist('ops_drivers', STATE.drivers);
+  renderDriversList();
+  renderSidebar(document.getElementById('citySearch').value);
+  toast('Motorista removido.');
+}
+
 function renderCityEventsList(){
-  const list = STATE.events.filter(e=> e.cities.includes(STATE.activeCity)).sort((a,b)=>a.date.localeCompare(b.date));
+  const list = STATE.events.filter(e=> e.cities.includes(ALL_CITIES_TAG) || e.cities.includes(STATE.activeCity))
+    .sort((a,b)=> a.periods[0].start.localeCompare(b.periods[0].start));
   const el = document.getElementById('cityEventsList');
   if(list.length===0){
     el.innerHTML = `<div class="empty-state">Nenhum feriado ou evento cadastrado para esta cidade.</div>`;
     return;
   }
   const today = todayStr();
-  el.innerHTML = list.map(ev=>`
-    <div class="event-item" style="opacity:${ev.date < today ? '.55' : '1'}">
+  el.innerHTML = list.map(ev=>{
+    const isPast = (ev.periods[ev.periods.length-1].end || ev.periods[ev.periods.length-1].start) < today;
+    return `
+    <div class="event-item" style="opacity:${isPast ? '.55' : '1'}">
       <div class="row">
         <div>
           <span class="badge ${ev.type}">${ev.type}</span>
           <div class="ttl" style="margin-top:5px;">${ev.title}</div>
-          <div class="date">${fmtDate(ev.date)}</div>
+          <div class="date">${ev.periods.map(periodLabel).join(' · ')}</div>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ======================= MODAL CLOSE ======================= */
