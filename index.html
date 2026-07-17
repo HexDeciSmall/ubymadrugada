@@ -153,21 +153,40 @@
   tr.detail-row{display:none;}
   tr.detail-row.open{display:table-row;}
   tr.detail-row td{background:var(--surface);padding:12px 16px 16px;}
-  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
-  .detail-item .dt-label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
-  .detail-item .dt-text{font-size:12.5px;color:var(--text-dim);line-height:1.5;white-space:pre-wrap;}
-  .detail-item .dt-text.empty{color:var(--text-faint);font-style:italic;}
+  .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .detail-item .dt-label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .detail-item .dt-text.empty{color:var(--text-faint);font-style:italic;font-size:12px;}
+  .table-item{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;margin-bottom:6px;font-size:11.5px;}
+  .table-item .txt{flex:1;min-width:0;}
+  .table-item .desc{color:var(--text-dim);display:block;margin-top:2px;}
+  .table-item button{background:none;border:none;color:var(--text-faint);font-size:13px;padding:0 3px;flex-shrink:0;}
+  .table-item button:hover{color:var(--crimson-bright);}
 
   .manual-form{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px;}
   .manual-form label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
   .manual-form input,.manual-form select,.manual-form textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:7px 8px;border-radius:5px;font-size:12.5px;outline:none;font-family:var(--font-body);}
   .manual-form input:focus,.manual-form select:focus,.manual-form textarea:focus{border-color:var(--crimson);}
-  .manual-form textarea{resize:vertical;min-height:44px;}
-  .manual-form .top-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-  .metric-block{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start;margin-bottom:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .manual-form .top-row{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+  .manual-form .form-title{font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px;}
+  .metric-block{margin-bottom:14px;padding-top:14px;border-top:1px solid var(--border);}
   .metric-block:first-of-type{border-top:none;padding-top:0;}
-  .metric-block .m-label{font-size:11.5px;color:var(--text);font-weight:600;text-transform:none;letter-spacing:0;padding-top:7px;}
+  .metric-block .m-label{font-size:12px;color:var(--text);font-weight:600;margin-bottom:8px;}
   .manual-form .full{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+  .pending-items{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+  .pending-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;}
+  .pending-item .txt{flex:1;min-width:0;}
+  .pending-item .city-tag{display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;white-space:nowrap;}
+  .pending-item .qty{font-family:var(--font-mono);color:var(--text-faint);font-size:11px;margin-right:6px;}
+  .pending-item .desc{color:var(--text-dim);}
+  .pending-item .desc.empty{color:var(--text-faint);font-style:italic;}
+  .pending-item button{background:none;border:none;color:var(--text-faint);font-size:15px;padding:0 4px;line-height:1;flex-shrink:0;}
+  .pending-item button:hover{color:var(--crimson-bright);}
+  .no-items{font-size:11px;color:var(--text-faint);font-style:italic;margin-bottom:10px;}
+  .item-add-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap;}
+  .item-add-row .f{display:flex;flex-direction:column;min-width:130px;}
+  .item-add-row .f.desc-f{flex:1;min-width:180px;}
+  .item-add-row .f.qty-f{min-width:64px;max-width:70px;}
+  .item-add-row label{margin-bottom:3px;}
 
   /* ===== CALENDAR ===== */
   .cal-controls{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
@@ -367,37 +386,52 @@
       </div>
 
       <div class="manual-form" id="manualForm" style="display:none;">
+        <div class="form-title" id="manualFormTitle">Novo registro</div>
         <div class="top-row">
           <div><label>Data</label><input type="date" id="mDate"></div>
-          <div><label>Cidade (opcional)</label><input type="text" id="mCidade" placeholder="ex: Muzambinho"></div>
         </div>
 
         <div class="metric-block">
           <div class="m-label">Corridas críticas</div>
-          <div>
-            <input type="number" id="mCriticas" value="0" style="margin-bottom:6px;">
-            <textarea id="mCriticasObs" placeholder="O que aconteceu? ex: corrida cancelada por atraso, passageiro relatou problema com o motorista..."></textarea>
+          <div class="pending-items" id="items-criticas"></div>
+          <div class="item-add-row">
+            <div class="f"><label>Cidade</label><select id="add-criticas-cidade"></select></div>
+            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-criticas-qtd" value="1" min="1"></div>
+            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-criticas-desc" placeholder="O que aconteceu..."></div>
+            <button class="btn small" type="button" onclick="addItem('criticas')">+ adicionar</button>
           </div>
         </div>
+
         <div class="metric-block">
           <div class="m-label">Problemas c/ motoristas</div>
-          <div>
-            <input type="number" id="mProblemas" value="0" style="margin-bottom:6px;">
-            <textarea id="mProblemasObs" placeholder="Detalhes do ocorrido com o(s) motorista(s)..."></textarea>
+          <div class="pending-items" id="items-problemas"></div>
+          <div class="item-add-row">
+            <div class="f"><label>Cidade</label><select id="add-problemas-cidade"></select></div>
+            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-problemas-qtd" value="1" min="1"></div>
+            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-problemas-desc" placeholder="Detalhes do ocorrido..."></div>
+            <button class="btn small" type="button" onclick="addItem('problemas')">+ adicionar</button>
           </div>
         </div>
+
         <div class="metric-block">
           <div class="m-label">Agendamentos</div>
-          <div>
-            <input type="number" id="mAgendamentos" value="0" style="margin-bottom:6px;">
-            <textarea id="mAgendamentosObs" placeholder="Observações sobre os agendamentos do dia..."></textarea>
+          <div class="pending-items" id="items-agendamentos"></div>
+          <div class="item-add-row">
+            <div class="f"><label>Cidade</label><select id="add-agendamentos-cidade"></select></div>
+            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-agendamentos-qtd" value="1" min="1"></div>
+            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-agendamentos-desc" placeholder="Observações..."></div>
+            <button class="btn small" type="button" onclick="addItem('agendamentos')">+ adicionar</button>
           </div>
         </div>
+
         <div class="metric-block">
           <div class="m-label">Fatores externos</div>
-          <div>
-            <input type="number" id="mExternos" value="0" style="margin-bottom:6px;">
-            <textarea id="mExternosObs" placeholder="ex: chuva forte, bloqueio de via, evento na cidade..."></textarea>
+          <div class="pending-items" id="items-externos"></div>
+          <div class="item-add-row">
+            <div class="f"><label>Cidade</label><select id="add-externos-cidade"></select></div>
+            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-externos-qtd" value="1" min="1"></div>
+            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-externos-desc" placeholder="ex: chuva forte, bloqueio de via..."></div>
+            <button class="btn small" type="button" onclick="addItem('externos')">+ adicionar</button>
           </div>
         </div>
 
@@ -571,9 +605,31 @@ function migrateDrivers(raw){
   });
   return out;
 }
+const CATS = ['criticas','problemas','agendamentos','externos'];
+function migrateReports(raw){
+  if(raw.length===0) return raw;
+  const isOld = typeof raw[0].criticas === 'number';
+  if(!isOld) return raw;
+  const byDate = {};
+  raw.forEach(old=>{
+    if(!byDate[old.date]) byDate[old.date] = {date: old.date, criticas:[], problemas:[], agendamentos:[], externos:[]};
+    const rep = byDate[old.date];
+    const cid = old.cidade || null;
+    const push = (cat, qty, desc) => {
+      if(qty>0 || (desc && desc.trim())){
+        rep[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cid, quantidade: qty||1, descricao: desc||'' });
+      }
+    };
+    push('criticas', old.criticas, old.criticasObs);
+    push('problemas', old.problemas, old.problemasObs);
+    push('agendamentos', old.agendamentos, old.agendamentosObs);
+    push('externos', old.externos, old.externosObs);
+  });
+  return Object.values(byDate);
+}
 
 const STATE = {
-  reports: load('ops_reports', []),
+  reports: migrateReports(load('ops_reports', [])),
   events: migrateEvents(load('ops_events', [])),
   drivers: migrateDrivers(load('ops_drivers', {})),
   cityStatus: load('ops_city_status', {}),
@@ -581,6 +637,8 @@ const STATE = {
   activeCity: null,
   dayModalDate: null,
   pendingPeriods: [],
+  pendingItems: {criticas:[], problemas:[], agendamentos:[], externos:[]},
+  editingDate: null,
 };
 
 function toast(msg){
@@ -645,6 +703,21 @@ function fmtPhone(phone){
   if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return phone || '';
 }
+function cityIdFromName(name){
+  if(!name) return null;
+  const n = normalize(name);
+  const found = CITIES.find(c => normalize(c.name) === n) || CITIES.find(c => normalize(c.name).includes(n) || n.includes(normalize(c.name)));
+  return found ? found.id : null;
+}
+function cityLabel(idOrName){
+  if(!idOrName) return 'Geral';
+  const c = CITIES.find(x=>x.id===idOrName);
+  return c ? c.name : idOrName;
+}
+function categoryTotal(rep, cat){
+  return (rep[cat]||[]).reduce((s,i)=> s+(i.quantidade||1), 0);
+}
+const CAT_LABELS = {criticas:'Corridas críticas', problemas:'Problemas c/ motoristas', agendamentos:'Agendamentos', externos:'Fatores externos'};
 
 /* ======================= SIDEBAR ======================= */
 function renderSidebar(filter=''){
@@ -715,67 +788,145 @@ function importRows(rows){
     Object.keys(row).forEach(k=> map[normalize(k)] = row[k]);
     const dateStr = parseDateCell(map['data']);
     if(!dateStr){ skipped++; return; }
-    const cidade = map['cidade'] ? String(map['cidade']).trim() : null;
+    const cidadeName = map['cidade'] ? String(map['cidade']).trim() : null;
+    const cidadeTag = cidadeName ? (cityIdFromName(cidadeName) || cidadeName) : null;
     const txt = v => v==null ? '' : String(v).trim();
-    const entry = {
-      date: dateStr,
-      cidade: cidade || null,
-      criticas: toNum(map['corridas criticas'] ?? map['criticas']),
-      problemas: toNum(map['problemas com motoristas'] ?? map['problemas']),
-      agendamentos: toNum(map['agendamentos']),
-      externos: toNum(map['fatores externos'] ?? map['externos']),
-      criticasObs: txt(map['detalhes corridas criticas'] ?? map['observacoes corridas criticas'] ?? map['obs corridas criticas'] ?? map['descricao corridas criticas']),
-      problemasObs: txt(map['detalhes problemas motoristas'] ?? map['observacoes problemas motoristas'] ?? map['obs problemas motoristas'] ?? map['descricao problemas motoristas']),
-      agendamentosObs: txt(map['detalhes agendamentos'] ?? map['observacoes agendamentos'] ?? map['obs agendamentos'] ?? map['descricao agendamentos']),
-      externosObs: txt(map['detalhes fatores externos'] ?? map['observacoes fatores externos'] ?? map['obs fatores externos'] ?? map['descricao fatores externos']),
-    };
-    const idx = STATE.reports.findIndex(r=> r.date===entry.date && (r.cidade||null)===(entry.cidade||null));
-    if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
+
+    let rep = STATE.reports.find(r=>r.date===dateStr);
+    if(!rep){ rep = {date: dateStr, criticas:[], problemas:[], agendamentos:[], externos:[]}; STATE.reports.push(rep); }
+
+    const specs = [
+      ['criticas', toNum(map['corridas criticas'] ?? map['criticas']), txt(map['detalhes corridas criticas'] ?? map['observacoes corridas criticas'] ?? map['obs corridas criticas'] ?? map['descricao corridas criticas'])],
+      ['problemas', toNum(map['problemas com motoristas'] ?? map['problemas']), txt(map['detalhes problemas motoristas'] ?? map['observacoes problemas motoristas'] ?? map['obs problemas motoristas'] ?? map['descricao problemas motoristas'])],
+      ['agendamentos', toNum(map['agendamentos']), txt(map['detalhes agendamentos'] ?? map['observacoes agendamentos'] ?? map['obs agendamentos'] ?? map['descricao agendamentos'])],
+      ['externos', toNum(map['fatores externos'] ?? map['externos']), txt(map['detalhes fatores externos'] ?? map['observacoes fatores externos'] ?? map['obs fatores externos'] ?? map['descricao fatores externos'])],
+    ];
+    specs.forEach(([cat, qty, desc])=>{
+      if(qty>0 || desc){
+        // evita duplicar ao reimportar: substitui item existente da mesma cidade nesse dia/categoria
+        rep[cat] = rep[cat].filter(i=> i.cidade !== cidadeTag);
+        rep[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cidadeTag, quantidade: qty||1, descricao: desc });
+      }
+    });
     count++;
   });
   persist('ops_reports', STATE.reports);
   renderDashboard();
-  toast(`${count} registro(s) importado(s)` + (skipped ? `, ${skipped} ignorado(s) (data inválida)` : '') + '.');
+  toast(`${count} linha(s) importada(s)` + (skipped ? `, ${skipped} ignorada(s) (data inválida)` : '') + '.');
 }
 
 /* ======================= REGISTRO MANUAL ======================= */
+function buildCitySelect(id){
+  const el = document.getElementById(id);
+  let html = '<option value="">Geral (sem cidade)</option>';
+  STATE_ORDER.forEach(uf=>{
+    html += `<optgroup label="${STATE_NAMES[uf]}">`;
+    CITIES.filter(c=>c.uf===uf).forEach(c=> html += `<option value="${c.id}">${c.name}</option>`);
+    html += `</optgroup>`;
+  });
+  el.innerHTML = html;
+}
+CATS.forEach(cat=> buildCitySelect(`add-${cat}-cidade`));
+
+function addItem(cat){
+  const cidadeSel = document.getElementById(`add-${cat}-cidade`);
+  const cidade = cidadeSel.value || null;
+  const qtd = Math.max(1, Math.round(toNum(document.getElementById(`add-${cat}-qtd`).value)) || 1);
+  const desc = document.getElementById(`add-${cat}-desc`).value.trim();
+  const item = { id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade, quantidade: qtd, descricao: desc };
+  STATE.pendingItems[cat].push(item);
+  cidadeSel.value = '';
+  document.getElementById(`add-${cat}-qtd`).value = 1;
+  document.getElementById(`add-${cat}-desc`).value = '';
+  renderPendingItems(cat);
+}
+function removeItem(cat, itemId){
+  STATE.pendingItems[cat] = STATE.pendingItems[cat].filter(i=>i.id!==itemId);
+  renderPendingItems(cat);
+}
+function renderPendingItems(cat){
+  const el = document.getElementById(`items-${cat}`);
+  const items = STATE.pendingItems[cat];
+  if(items.length===0){
+    el.innerHTML = `<div class="no-items">Nenhum item adicionado ainda.</div>`;
+    return;
+  }
+  el.innerHTML = items.map(i=>`
+    <div class="pending-item">
+      <div class="txt"><span class="city-tag">${cityLabel(i.cidade)}</span><span class="qty">×${i.quantidade}</span><span class="desc${i.descricao?'':' empty'}">${i.descricao || 'sem descrição'}</span></div>
+      <button type="button" onclick="removeItem('${cat}','${i.id}')" title="Remover">×</button>
+    </div>
+  `).join('');
+}
+function renderAllPendingItems(){ CATS.forEach(c=> renderPendingItems(c)); }
+
+function openManualForm(editDate){
+  const f = document.getElementById('manualForm');
+  if(editDate){
+    STATE.editingDate = editDate;
+    const rep = STATE.reports.find(r=>r.date===editDate);
+    CATS.forEach(c=> STATE.pendingItems[c] = rep ? rep[c].map(i=>({...i})) : []);
+    document.getElementById('mDate').value = editDate;
+    document.getElementById('mDate').disabled = true;
+    document.getElementById('manualFormTitle').textContent = 'Editando registro de ' + fmtDate(editDate);
+  } else {
+    STATE.editingDate = null;
+    CATS.forEach(c=> STATE.pendingItems[c] = []);
+    document.getElementById('mDate').value = todayStr();
+    document.getElementById('mDate').disabled = false;
+    document.getElementById('manualFormTitle').textContent = 'Novo registro';
+  }
+  renderAllPendingItems();
+  f.style.display = 'block';
+  f.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
 document.getElementById('manualToggleBtn').addEventListener('click', ()=>{
   const f = document.getElementById('manualForm');
-  f.style.display = f.style.display==='none' ? 'grid' : 'none';
-  document.getElementById('mDate').value = todayStr();
+  if(f.style.display === 'block'){ f.style.display = 'none'; return; }
+  openManualForm(null);
 });
 document.getElementById('manualCancel').addEventListener('click', ()=>{
   document.getElementById('manualForm').style.display = 'none';
+  document.getElementById('mDate').disabled = false;
+  STATE.editingDate = null;
 });
 document.getElementById('manualSave').addEventListener('click', ()=>{
-  const dateStr = document.getElementById('mDate').value;
+  const dateStr = STATE.editingDate || document.getElementById('mDate').value;
   if(!dateStr){ toast('Informe uma data.'); return; }
-  const entry = {
-    date: dateStr,
-    cidade: document.getElementById('mCidade').value.trim() || null,
-    criticas: toNum(document.getElementById('mCriticas').value),
-    problemas: toNum(document.getElementById('mProblemas').value),
-    agendamentos: toNum(document.getElementById('mAgendamentos').value),
-    externos: toNum(document.getElementById('mExternos').value),
-    criticasObs: document.getElementById('mCriticasObs').value.trim(),
-    problemasObs: document.getElementById('mProblemasObs').value.trim(),
-    agendamentosObs: document.getElementById('mAgendamentosObs').value.trim(),
-    externosObs: document.getElementById('mExternosObs').value.trim(),
-  };
-  const idx = STATE.reports.findIndex(r=> r.date===entry.date && (r.cidade||null)===(entry.cidade||null));
+  const totalItems = CATS.reduce((s,c)=> s + STATE.pendingItems[c].length, 0);
+  if(totalItems===0){ toast('Adicione ao menos um item em alguma categoria.'); return; }
+  const entry = { date: dateStr };
+  CATS.forEach(c=> entry[c] = STATE.pendingItems[c]);
+  const idx = STATE.reports.findIndex(r=> r.date===dateStr);
   if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
   persist('ops_reports', STATE.reports);
   renderDashboard();
   document.getElementById('manualForm').style.display = 'none';
-  ['mCriticasObs','mProblemasObs','mAgendamentosObs','mExternosObs'].forEach(id=> document.getElementById(id).value = '');
+  document.getElementById('mDate').disabled = false;
+  STATE.editingDate = null;
   toast('Registro salvo.');
 });
 
-function deleteReport(date, cidade){
-  STATE.reports = STATE.reports.filter(r=> !(r.date===date && (r.cidade||null)===(cidade||null)));
+function editReport(date){
+  document.getElementById('tab-dashboard').scrollIntoView({behavior:'instant'});
+  openManualForm(date);
+}
+
+function deleteReport(date){
+  STATE.reports = STATE.reports.filter(r=> r.date!==date);
   persist('ops_reports', STATE.reports);
   renderDashboard();
   toast('Registro removido.');
+}
+
+function deleteReportItem(date, cat, itemId){
+  const rep = STATE.reports.find(r=>r.date===date);
+  if(!rep) return;
+  rep[cat] = rep[cat].filter(i=>i.id!==itemId);
+  persist('ops_reports', STATE.reports);
+  renderDashboard();
+  toast('Item removido.');
 }
 
 /* ======================= DASHBOARD RENDER ======================= */
@@ -783,8 +934,10 @@ function renderStats(){
   const ym = todayStr().slice(0,7);
   const monthReports = STATE.reports.filter(r=> r.date.startsWith(ym));
   const totals = monthReports.reduce((acc,r)=>{
-    acc.criticas += r.criticas; acc.problemas += r.problemas;
-    acc.agendamentos += r.agendamentos; acc.externos += r.externos;
+    acc.criticas += categoryTotal(r,'criticas');
+    acc.problemas += categoryTotal(r,'problemas');
+    acc.agendamentos += categoryTotal(r,'agendamentos');
+    acc.externos += categoryTotal(r,'externos');
     return acc;
   }, {criticas:0,problemas:0,agendamentos:0,externos:0});
 
@@ -809,7 +962,8 @@ function renderPulse(){
   for(let i=29;i>=0;i--){
     const d = new Date(base); d.setDate(base.getDate()-i);
     const ds = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const total = STATE.reports.filter(r=>r.date===ds).reduce((s,r)=>s+r.criticas,0);
+    const rep = STATE.reports.find(r=>r.date===ds);
+    const total = rep ? categoryTotal(rep,'criticas') : 0;
     days.push(total);
   }
   const max = Math.max(1, ...days);
@@ -825,39 +979,49 @@ function renderReportsTable(){
   const wrap = document.getElementById('reportsTableWrap');
   const hint = document.getElementById('reportsHint');
   const sorted = [...STATE.reports].sort((a,b)=> b.date.localeCompare(a.date));
-  hint.textContent = sorted.length ? `${sorted.length} registro(s)` : '';
+  hint.textContent = sorted.length ? `${sorted.length} dia(s) registrado(s)` : '';
   if(sorted.length===0){
     wrap.innerHTML = `<div class="empty-state">Nenhum registro ainda. Importe uma planilha ou adicione um registro manual.</div>`;
     return;
   }
-  const rowId = (r,i) => `rep_${i}`;
+  const rowId = (i) => `rep_${i}`;
   wrap.innerHTML = `
     <table>
       <thead><tr>
-        <th></th><th>Data</th><th>Cidade</th><th>Críticas</th><th>Problemas</th><th>Agendamentos</th><th>Externos</th><th></th>
+        <th></th><th>Data</th><th>Críticas</th><th>Problemas</th><th>Agendamentos</th><th>Externos</th><th></th>
       </tr></thead>
       <tbody>
         ${sorted.map((r,i)=>{
-          const cidadeArg = r.cidade ? `'${r.cidade.replace(/'/g,"\\'")}'` : 'null';
-          const hasObs = r.criticasObs || r.problemasObs || r.agendamentosObs || r.externosObs;
+          const totalItems = CATS.reduce((s,c)=> s+(r[c]||[]).length, 0);
           return `
           <tr>
-            <td><button class="expand-btn" onclick="toggleDetail('${rowId(r,i)}')" title="Ver detalhes">${hasObs ? '📝' : '⋯'}</button></td>
+            <td><button class="expand-btn" onclick="toggleDetail('${rowId(i)}')" title="Ver detalhes">${totalItems ? '📝' : '⋯'}</button></td>
             <td>${fmtDate(r.date)}</td>
-            <td>${r.cidade || '<span style="color:var(--text-faint)">Geral</span>'}</td>
-            <td class="num">${r.criticas}</td>
-            <td class="num">${r.problemas}</td>
-            <td class="num">${r.agendamentos}</td>
-            <td class="num">${r.externos}</td>
-            <td><button class="btn danger small" onclick="deleteReport('${r.date}', ${cidadeArg})">Excluir</button></td>
+            <td class="num">${categoryTotal(r,'criticas')}</td>
+            <td class="num">${categoryTotal(r,'problemas')}</td>
+            <td class="num">${categoryTotal(r,'agendamentos')}</td>
+            <td class="num">${categoryTotal(r,'externos')}</td>
+            <td style="white-space:nowrap;">
+              <button class="btn ghost small" onclick="editReport('${r.date}')">Editar</button>
+              <button class="btn danger small" onclick="deleteReport('${r.date}')">Excluir</button>
+            </td>
           </tr>
-          <tr class="detail-row" id="${rowId(r,i)}">
-            <td colspan="8">
+          <tr class="detail-row" id="${rowId(i)}">
+            <td colspan="7">
               <div class="detail-grid">
-                <div class="detail-item"><div class="dt-label">Corridas críticas</div><div class="dt-text${r.criticasObs?'':' empty'}">${r.criticasObs || 'Sem detalhes registrados.'}</div></div>
-                <div class="detail-item"><div class="dt-label">Problemas c/ motoristas</div><div class="dt-text${r.problemasObs?'':' empty'}">${r.problemasObs || 'Sem detalhes registrados.'}</div></div>
-                <div class="detail-item"><div class="dt-label">Agendamentos</div><div class="dt-text${r.agendamentosObs?'':' empty'}">${r.agendamentosObs || 'Sem detalhes registrados.'}</div></div>
-                <div class="detail-item"><div class="dt-label">Fatores externos</div><div class="dt-text${r.externosObs?'':' empty'}">${r.externosObs || 'Sem detalhes registrados.'}</div></div>
+                ${CATS.map(cat=>`
+                  <div class="detail-item">
+                    <div class="dt-label">${CAT_LABELS[cat]}</div>
+                    ${(r[cat]||[]).length===0 ? `<div class="dt-text empty">Sem itens registrados.</div>` : (r[cat]||[]).map(item=>`
+                      <div class="table-item">
+                        <div class="txt"><span class="city-tag" style="display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;">${cityLabel(item.cidade)}</span><span style="font-family:var(--font-mono);color:var(--text-faint);font-size:11px;">×${item.quantidade}</span>
+                          ${item.descricao ? `<span class="desc">${item.descricao}</span>` : ''}
+                        </div>
+                        <button onclick="deleteReportItem('${r.date}','${cat}','${item.id}')" title="Remover item">×</button>
+                      </div>
+                    `).join('')}
+                  </div>
+                `).join('')}
               </div>
             </td>
           </tr>
