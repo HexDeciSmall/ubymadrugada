@@ -152,6 +152,11 @@
   .expand-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);width:26px;height:26px;border-radius:5px;font-size:11px;}
   .expand-btn:hover{border-color:var(--crimson);color:var(--text);}
   .expand-btn.open{background:var(--crimson-glow);border-color:var(--crimson-bright);color:var(--crimson-bright);}
+  .day-badge{display:inline-block;font-size:9.5px;padding:2px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px;vertical-align:middle;}
+  .day-badge.critico{background:var(--crimson-glow);color:var(--crimson-bright);}
+  .day-badge.bom{background:rgba(61,220,132,.14);color:#3ddc84;}
+  tr.row-critico td:first-child{box-shadow:inset 3px 0 0 var(--crimson-bright);}
+  tr.row-bom td:first-child{box-shadow:inset 3px 0 0 #3ddc84;}
   tr.detail-row{display:none;}
   tr.detail-row.open{display:table-row;}
   tr.detail-row td{background:var(--surface);padding:12px 16px 16px;}
@@ -392,6 +397,14 @@
         <div class="form-title" id="manualFormTitle">Novo registro</div>
         <div class="top-row">
           <div><label>Data</label><input type="date" id="mDate"></div>
+        </div>
+
+        <div class="field" style="margin-bottom:16px;">
+          <label>Classificação do dia (opcional)</label>
+          <div class="status-toggle" style="margin-bottom:0;">
+            <button class="status-btn r" type="button" id="diaStatusBtnCritico" data-status="critico"><i></i>Dia crítico</button>
+            <button class="status-btn g" type="button" id="diaStatusBtnBom" data-status="bom"><i></i>Dia bom</button>
+          </div>
         </div>
 
         <div class="metric-block">
@@ -658,6 +671,7 @@ const STATE = {
   dayModalDate: null,
   pendingPeriods: [],
   pendingItems: {criticas:[], problemas:[], agendamentos:[], externos:[]},
+  pendingDiaStatus: null,
   editingDate: null,
 };
 
@@ -880,22 +894,36 @@ function renderPendingItems(cat){
 }
 function renderAllPendingItems(){ CATS.forEach(c=> renderPendingItems(c)); }
 
+function renderDiaStatusButtons(){
+  document.getElementById('diaStatusBtnCritico').classList.toggle('active', STATE.pendingDiaStatus==='critico');
+  document.getElementById('diaStatusBtnBom').classList.toggle('active', STATE.pendingDiaStatus==='bom');
+}
+function setDiaStatus(value){
+  STATE.pendingDiaStatus = STATE.pendingDiaStatus===value ? null : value;
+  renderDiaStatusButtons();
+}
+document.getElementById('diaStatusBtnCritico').addEventListener('click', ()=> setDiaStatus('critico'));
+document.getElementById('diaStatusBtnBom').addEventListener('click', ()=> setDiaStatus('bom'));
+
 function openManualForm(editDate){
   const f = document.getElementById('manualForm');
   if(editDate){
     STATE.editingDate = editDate;
     const rep = STATE.reports.find(r=>r.date===editDate);
     CATS.forEach(c=> STATE.pendingItems[c] = rep ? rep[c].map(i=>({...i})) : []);
+    STATE.pendingDiaStatus = rep ? (rep.diaStatus || null) : null;
     document.getElementById('mDate').value = editDate;
     document.getElementById('mDate').disabled = true;
     document.getElementById('manualFormTitle').textContent = 'Editando registro de ' + fmtDate(editDate);
   } else {
     STATE.editingDate = null;
     CATS.forEach(c=> STATE.pendingItems[c] = []);
+    STATE.pendingDiaStatus = null;
     document.getElementById('mDate').value = todayStr();
     document.getElementById('mDate').disabled = false;
     document.getElementById('manualFormTitle').textContent = 'Novo registro';
   }
+  renderDiaStatusButtons();
   renderAllPendingItems();
   f.style.display = 'block';
   f.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -916,7 +944,7 @@ document.getElementById('manualSave').addEventListener('click', ()=>{
   if(!dateStr){ toast('Informe uma data.'); return; }
   const totalItems = CATS.reduce((s,c)=> s + STATE.pendingItems[c].length, 0);
   if(totalItems===0){ toast('Adicione ao menos um item em alguma categoria.'); return; }
-  const entry = { date: dateStr };
+  const entry = { date: dateStr, diaStatus: STATE.pendingDiaStatus };
   CATS.forEach(c=> entry[c] = STATE.pendingItems[c]);
   const idx = STATE.reports.findIndex(r=> r.date===dateStr);
   if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
@@ -1013,10 +1041,12 @@ function renderReportsTable(){
       <tbody>
         ${sorted.map((r,i)=>{
           const totalItems = CATS.reduce((s,c)=> s+(r[c]||[]).length, 0);
+          const rowClass = r.diaStatus==='critico' ? ' row-critico' : r.diaStatus==='bom' ? ' row-bom' : '';
+          const dayBadge = r.diaStatus==='critico' ? '<span class="day-badge critico">Dia crítico</span>' : r.diaStatus==='bom' ? '<span class="day-badge bom">Dia bom</span>' : '';
           return `
-          <tr>
+          <tr class="${rowClass.trim()}">
             <td><button class="expand-btn" onclick="toggleDetail('${rowId(i)}')" title="Ver detalhes">${totalItems ? '📝' : '⋯'}</button></td>
-            <td>${fmtDate(r.date)}</td>
+            <td>${fmtDate(r.date)}${dayBadge}</td>
             <td class="num">${categoryTotal(r,'criticas')}</td>
             <td class="num">${categoryTotal(r,'problemas')}</td>
             <td class="num">${categoryTotal(r,'agendamentos')}</td>
