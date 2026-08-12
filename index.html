@@ -170,6 +170,25 @@
   .table-item button{background:none;border:none;color:var(--text-faint);font-size:13px;padding:0 3px;flex-shrink:0;}
   .table-item button:hover{color:var(--crimson-bright);}
 
+  /* ===== RELATÓRIO SEMANAL ===== */
+  .week-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:16px 18px;margin-bottom:14px;}
+  .week-card.critica{border-color:var(--crimson-bright);box-shadow:0 0 0 1px var(--crimson-bright);}
+  .week-card.boa{border-color:#3ddc84;box-shadow:0 0 0 1px #3ddc84;}
+  .week-card .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .week-card .period{font-family:var(--font-display);font-size:15.5px;font-weight:600;color:var(--text);}
+  .week-card .period small{display:block;font-family:var(--font-body);font-size:11px;color:var(--text-faint);font-weight:400;margin-top:2px;}
+  .week-card .actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+  .week-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .week-chip{font-family:var(--font-mono);font-size:10.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;color:var(--text-dim);}
+  .week-chip b{color:var(--text);}
+  .week-resumo-preview{font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;max-height:38px;overflow:hidden;}
+  .week-detail{display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+  .week-detail.open{display:block;}
+  .week-detail .sub-title{font-family:var(--font-display);font-size:12.5px;font-weight:600;margin:16px 0 8px;color:var(--text);}
+  .week-detail .sub-title:first-child{margin-top:0;}
+  .week-detail .txt-block{font-size:12.5px;color:var(--text-dim);white-space:pre-wrap;line-height:1.65;}
+  .week-detail .txt-block.empty{color:var(--text-faint);font-style:italic;}
+
   .manual-form{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px;}
   .manual-form label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
   .manual-form input,.manual-form select,.manual-form textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:7px 8px;border-radius:5px;font-size:12.5px;outline:none;font-family:var(--font-body);}
@@ -382,7 +401,7 @@
         </div>
       </div>
       <div class="pulse-wrap">
-        <div class="pulse-label">Pulso · Corridas críticas (últimos 30 dias)</div>
+        <div class="pulse-label">Pulso · Corridas críticas (últimas 10 semanas)</div>
         <svg id="pulseSvg" viewBox="0 0 600 46" preserveAspectRatio="none">
           <defs>
             <linearGradient id="pulseGrad" x1="0" y1="0" x2="0" y2="1">
@@ -395,7 +414,7 @@
         </svg>
       </div>
       <div class="tabs">
-        <button class="tab-btn active" data-tab="dashboard">Relatórios</button>
+        <button class="tab-btn active" data-tab="dashboard">Relatório Semanal</button>
         <button class="tab-btn" data-tab="calendar">Calendário</button>
         <button class="tab-btn" data-tab="guides">Guias e Dicas</button>
       </div>
@@ -407,26 +426,36 @@
 
       <div class="import-bar">
         <div class="txt">
-          <strong>Importar relatório diário (.xlsx / .csv)</strong>
-          <span>Colunas esperadas: Data · Corridas Críticas · Problemas com Motoristas · Agendamentos · Fatores Externos · (Cidade opcional). Para relatos escritos, adicione colunas "Detalhes Corridas Críticas", "Detalhes Problemas Motoristas", "Detalhes Agendamentos", "Detalhes Fatores Externos".</span>
+          <strong>Importar planilha diária (.xlsx / .csv)</strong>
+          <span>Continue importando sua planilha do dia a dia — os dados são agrupados automaticamente na semana correspondente (segunda a domingo). Colunas esperadas: Data · Corridas Críticas · Problemas com Motoristas · Agendamentos · Fatores Externos · (Cidade opcional).</span>
         </div>
         <label class="btn" for="fileInput">Importar planilha</label>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-        <button class="btn ghost small" id="manualToggleBtn">+ Registro manual</button>
+        <button class="btn ghost small" id="newWeekBtn">+ Novo relatório semanal</button>
       </div>
 
-      <div class="manual-form" id="manualForm" style="display:none;">
-        <div class="form-title" id="manualFormTitle">Novo registro</div>
+      <div class="manual-form" id="weekForm" style="display:none;">
+        <div class="form-title" id="weekFormTitle">Novo relatório semanal</div>
+
         <div class="top-row">
-          <div><label>Data</label><input type="date" id="mDate"></div>
+          <div>
+            <label>Escolha um dia dentro da semana</label>
+            <input type="date" id="wkDate">
+            <div id="wkRangeLabel" style="font-size:11.5px;color:var(--text-faint);margin-top:6px;"></div>
+          </div>
         </div>
 
         <div class="field" style="margin-bottom:16px;">
-          <label>Classificação do dia (opcional)</label>
+          <label>Classificação da semana (opcional)</label>
           <div class="status-toggle" style="margin-bottom:0;">
-            <button class="status-btn r" type="button" id="diaStatusBtnCritico" data-status="critico"><i></i>Dia crítico</button>
-            <button class="status-btn g" type="button" id="diaStatusBtnBom" data-status="bom"><i></i>Dia bom</button>
+            <button class="status-btn r" type="button" id="weekStatusBtnCritica" data-status="critica"><i></i>Semana crítica</button>
+            <button class="status-btn g" type="button" id="weekStatusBtnBoa" data-status="boa"><i></i>Semana boa</button>
           </div>
+        </div>
+
+        <div class="field">
+          <label>Resumo geral da semana</label>
+          <textarea id="wkResumo" style="min-height:130px;" placeholder="Como foi a semana de forma geral? Panorama do plantão noturno, tendências observadas, contexto importante..."></textarea>
         </div>
 
         <div class="metric-block">
@@ -473,14 +502,24 @@
           </div>
         </div>
 
+        <div class="field" style="margin-top:6px;">
+          <label>Ações tomadas / resoluções</label>
+          <textarea id="wkAcoes" style="min-height:100px;" placeholder="O que foi feito para resolver os pontos da semana? Contatos realizados, treinamentos, ajustes..."></textarea>
+        </div>
+
+        <div class="field">
+          <label>Pontos de atenção para a próxima semana</label>
+          <textarea id="wkPendencias" style="min-height:100px;" placeholder="O que ainda precisa de acompanhamento? Pendências, riscos, coisas a observar..."></textarea>
+        </div>
+
         <div class="full">
-          <button class="btn ghost small" id="manualCancel">Cancelar</button>
-          <button class="btn small" id="manualSave">Salvar registro</button>
+          <button class="btn ghost small" id="weekCancel">Cancelar</button>
+          <button class="btn small" id="weekSave">Salvar relatório semanal</button>
         </div>
       </div>
 
-      <div class="section-title">Histórico de registros <span class="hint" id="reportsHint"></span></div>
-      <div id="reportsTableWrap"></div>
+      <div class="section-title">Relatórios semanais <span class="hint" id="weeklyReportsHint"></span></div>
+      <div id="weeklyReportsWrap"></div>
     </section>
 
     <!-- CALENDAR -->
@@ -732,8 +771,45 @@ function migrateReports(raw){
   return Object.values(byDate);
 }
 
+/* semana operacional: segunda a domingo */
+function getWeekStart(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const day = d.getDay();
+  const diffToMonday = day===0 ? -6 : 1-day;
+  d.setDate(d.getDate()+diffToMonday);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function getWeekEnd(weekStart){
+  const d = new Date(weekStart+'T00:00:00');
+  d.setDate(d.getDate()+6);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function weekRangeLabel(weekStart){
+  return `${fmtDate(weekStart)} a ${fmtDate(getWeekEnd(weekStart))}`;
+}
+function migrateToWeekly(dailyReports){
+  const byWeek = {};
+  dailyReports.forEach(dr=>{
+    const wk = getWeekStart(dr.date);
+    if(!byWeek[wk]){
+      byWeek[wk] = { id:'wk_'+wk, weekStart: wk, status:null, resumo:'', criticas:[], problemas:[], agendamentos:[], externos:[], acoes:'', pendencias:'', createdAt: Date.now() };
+    }
+    const rep = byWeek[wk];
+    CATS.forEach(c=> (dr[c]||[]).forEach(item=> rep[c].push({...item})));
+    if(dr.diaStatus==='critico' && !rep.status) rep.status = 'critica';
+    if(dr.diaStatus==='bom' && !rep.status) rep.status = 'boa';
+  });
+  return Object.values(byWeek);
+}
+function initWeeklyReports(){
+  const existing = load('ops_weekly_reports', null);
+  if(existing) return existing;
+  const legacyDaily = migrateReports(load('ops_reports', []));
+  return migrateToWeekly(legacyDaily);
+}
+
 const STATE = {
-  reports: migrateReports(load('ops_reports', [])),
+  weeklyReports: initWeeklyReports(),
   events: migrateEvents(load('ops_events', [])),
   drivers: migrateDrivers(load('ops_drivers', {})),
   cityStatus: load('ops_city_status', {}),
@@ -745,8 +821,9 @@ const STATE = {
   dayModalDate: null,
   pendingPeriods: [],
   pendingItems: {criticas:[], problemas:[], agendamentos:[], externos:[]},
-  pendingDiaStatus: null,
-  editingDate: null,
+  pendingWeekStatus: null,
+  pendingWeekStart: null,
+  editingWeekStart: null,
 };
 
 function toast(msg){
@@ -900,12 +977,16 @@ function importRows(rows){
     Object.keys(row).forEach(k=> map[normalize(k)] = row[k]);
     const dateStr = parseDateCell(map['data']);
     if(!dateStr){ skipped++; return; }
+    const weekStart = getWeekStart(dateStr);
     const cidadeName = map['cidade'] ? String(map['cidade']).trim() : null;
     const cidadeTag = cidadeName ? (cityIdFromName(cidadeName) || cidadeName) : null;
     const txt = v => v==null ? '' : String(v).trim();
 
-    let rep = STATE.reports.find(r=>r.date===dateStr);
-    if(!rep){ rep = {date: dateStr, criticas:[], problemas:[], agendamentos:[], externos:[]}; STATE.reports.push(rep); }
+    let rep = STATE.weeklyReports.find(r=>r.weekStart===weekStart);
+    if(!rep){
+      rep = { id:'wk_'+weekStart, weekStart, status:null, resumo:'', criticas:[], problemas:[], agendamentos:[], externos:[], acoes:'', pendencias:'', createdAt: Date.now() };
+      STATE.weeklyReports.push(rep);
+    }
 
     const specs = [
       ['criticas', toNum(map['corridas criticas'] ?? map['criticas']), txt(map['detalhes corridas criticas'] ?? map['observacoes corridas criticas'] ?? map['obs corridas criticas'] ?? map['descricao corridas criticas'])],
@@ -915,19 +996,21 @@ function importRows(rows){
     ];
     specs.forEach(([cat, qty, desc])=>{
       if(qty>0 || desc){
-        // evita duplicar ao reimportar: substitui item existente da mesma cidade nesse dia/categoria
-        rep[cat] = rep[cat].filter(i=> i.cidade !== cidadeTag);
-        rep[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cidadeTag, quantidade: qty||1, descricao: desc });
+        // evita duplicar linhas idênticas ao reimportar a mesma planilha
+        const dupe = rep[cat].some(i=> i.cidade===cidadeTag && i.quantidade===(qty||1) && i.descricao===desc);
+        if(!dupe){
+          rep[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cidadeTag, quantidade: qty||1, descricao: desc });
+        }
       }
     });
     count++;
   });
-  persist('ops_reports', STATE.reports);
+  persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
-  toast(`${count} linha(s) importada(s)` + (skipped ? `, ${skipped} ignorada(s) (data inválida)` : '') + '.');
+  toast(`${count} linha(s) importada(s) e agrupada(s) por semana` + (skipped ? `, ${skipped} ignorada(s) (data inválida)` : '') + '.');
 }
 
-/* ======================= REGISTRO MANUAL ======================= */
+/* ======================= RELATÓRIO SEMANAL ======================= */
 function buildCitySelect(id){
   const el = document.getElementById(id);
   let html = '<option value="">Geral (sem cidade)</option>';
@@ -972,101 +1055,130 @@ function renderPendingItems(cat){
 }
 function renderAllPendingItems(){ CATS.forEach(c=> renderPendingItems(c)); }
 
-function renderDiaStatusButtons(){
-  document.getElementById('diaStatusBtnCritico').classList.toggle('active', STATE.pendingDiaStatus==='critico');
-  document.getElementById('diaStatusBtnBom').classList.toggle('active', STATE.pendingDiaStatus==='bom');
+function renderWeekStatusButtons(){
+  document.getElementById('weekStatusBtnCritica').classList.toggle('active', STATE.pendingWeekStatus==='critica');
+  document.getElementById('weekStatusBtnBoa').classList.toggle('active', STATE.pendingWeekStatus==='boa');
 }
-function setDiaStatus(value){
-  STATE.pendingDiaStatus = STATE.pendingDiaStatus===value ? null : value;
-  renderDiaStatusButtons();
+function setWeekStatus(value){
+  STATE.pendingWeekStatus = STATE.pendingWeekStatus===value ? null : value;
+  renderWeekStatusButtons();
 }
-document.getElementById('diaStatusBtnCritico').addEventListener('click', ()=> setDiaStatus('critico'));
-document.getElementById('diaStatusBtnBom').addEventListener('click', ()=> setDiaStatus('bom'));
+document.getElementById('weekStatusBtnCritica').addEventListener('click', ()=> setWeekStatus('critica'));
+document.getElementById('weekStatusBtnBoa').addEventListener('click', ()=> setWeekStatus('boa'));
 
-function openManualForm(editDate){
-  const f = document.getElementById('manualForm');
-  if(editDate){
-    STATE.editingDate = editDate;
-    const rep = STATE.reports.find(r=>r.date===editDate);
+function updateWkRangeLabel(){
+  const val = document.getElementById('wkDate').value;
+  const label = document.getElementById('wkRangeLabel');
+  if(!val){ label.textContent = ''; STATE.pendingWeekStart = null; return; }
+  const wk = getWeekStart(val);
+  STATE.pendingWeekStart = wk;
+  label.textContent = `Semana: ${weekRangeLabel(wk)} (segunda a domingo)`;
+}
+document.getElementById('wkDate').addEventListener('change', updateWkRangeLabel);
+
+function openWeekForm(editWeekStart){
+  const f = document.getElementById('weekForm');
+  const wkDateInput = document.getElementById('wkDate');
+  if(editWeekStart){
+    STATE.editingWeekStart = editWeekStart;
+    const rep = STATE.weeklyReports.find(r=>r.weekStart===editWeekStart);
     CATS.forEach(c=> STATE.pendingItems[c] = rep ? rep[c].map(i=>({...i})) : []);
-    STATE.pendingDiaStatus = rep ? (rep.diaStatus || null) : null;
-    document.getElementById('mDate').value = editDate;
-    document.getElementById('mDate').disabled = true;
-    document.getElementById('manualFormTitle').textContent = 'Editando registro de ' + fmtDate(editDate);
+    STATE.pendingWeekStatus = rep ? (rep.status || null) : null;
+    STATE.pendingWeekStart = editWeekStart;
+    wkDateInput.value = editWeekStart;
+    wkDateInput.disabled = true;
+    document.getElementById('wkRangeLabel').textContent = `Semana: ${weekRangeLabel(editWeekStart)} (segunda a domingo)`;
+    document.getElementById('wkResumo').value = rep ? (rep.resumo||'') : '';
+    document.getElementById('wkAcoes').value = rep ? (rep.acoes||'') : '';
+    document.getElementById('wkPendencias').value = rep ? (rep.pendencias||'') : '';
+    document.getElementById('weekFormTitle').textContent = 'Editando relatório da semana de ' + weekRangeLabel(editWeekStart);
   } else {
-    STATE.editingDate = null;
+    STATE.editingWeekStart = null;
     CATS.forEach(c=> STATE.pendingItems[c] = []);
-    STATE.pendingDiaStatus = null;
-    document.getElementById('mDate').value = todayStr();
-    document.getElementById('mDate').disabled = false;
-    document.getElementById('manualFormTitle').textContent = 'Novo registro';
+    STATE.pendingWeekStatus = null;
+    const wk = getWeekStart(todayStr());
+    STATE.pendingWeekStart = wk;
+    wkDateInput.value = todayStr();
+    wkDateInput.disabled = false;
+    document.getElementById('wkRangeLabel').textContent = `Semana: ${weekRangeLabel(wk)} (segunda a domingo)`;
+    document.getElementById('wkResumo').value = '';
+    document.getElementById('wkAcoes').value = '';
+    document.getElementById('wkPendencias').value = '';
+    document.getElementById('weekFormTitle').textContent = 'Novo relatório semanal';
   }
-  renderDiaStatusButtons();
+  renderWeekStatusButtons();
   renderAllPendingItems();
   f.style.display = 'block';
   f.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-document.getElementById('manualToggleBtn').addEventListener('click', ()=>{
-  const f = document.getElementById('manualForm');
+document.getElementById('newWeekBtn').addEventListener('click', ()=>{
+  const f = document.getElementById('weekForm');
   if(f.style.display === 'block'){ f.style.display = 'none'; return; }
-  openManualForm(null);
+  openWeekForm(null);
 });
-document.getElementById('manualCancel').addEventListener('click', ()=>{
-  document.getElementById('manualForm').style.display = 'none';
-  document.getElementById('mDate').disabled = false;
-  STATE.editingDate = null;
+document.getElementById('weekCancel').addEventListener('click', ()=>{
+  document.getElementById('weekForm').style.display = 'none';
+  document.getElementById('wkDate').disabled = false;
+  STATE.editingWeekStart = null;
 });
-document.getElementById('manualSave').addEventListener('click', ()=>{
-  const dateStr = STATE.editingDate || document.getElementById('mDate').value;
-  if(!dateStr){ toast('Informe uma data.'); return; }
+document.getElementById('weekSave').addEventListener('click', ()=>{
+  const weekStart = STATE.editingWeekStart || STATE.pendingWeekStart;
+  if(!weekStart){ toast('Selecione um dia para identificar a semana.'); return; }
+  const resumo = document.getElementById('wkResumo').value.trim();
+  const acoes = document.getElementById('wkAcoes').value.trim();
+  const pendencias = document.getElementById('wkPendencias').value.trim();
   const totalItems = CATS.reduce((s,c)=> s + STATE.pendingItems[c].length, 0);
-  if(totalItems===0){ toast('Adicione ao menos um item em alguma categoria.'); return; }
-  const entry = { date: dateStr, diaStatus: STATE.pendingDiaStatus };
+  if(totalItems===0 && !resumo && !acoes && !pendencias){
+    toast('Escreva o resumo da semana ou adicione ao menos um item.'); return;
+  }
+  const idx = STATE.weeklyReports.findIndex(r=> r.weekStart===weekStart);
+  const entry = {
+    id: 'wk_'+weekStart, weekStart, status: STATE.pendingWeekStatus,
+    resumo, acoes, pendencias,
+    createdAt: idx>=0 ? STATE.weeklyReports[idx].createdAt : Date.now(),
+  };
   CATS.forEach(c=> entry[c] = STATE.pendingItems[c]);
-  const idx = STATE.reports.findIndex(r=> r.date===dateStr);
-  if(idx>=0) STATE.reports[idx] = entry; else STATE.reports.push(entry);
-  persist('ops_reports', STATE.reports);
+  if(idx>=0) STATE.weeklyReports[idx] = entry; else STATE.weeklyReports.push(entry);
+  persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
-  document.getElementById('manualForm').style.display = 'none';
-  document.getElementById('mDate').disabled = false;
-  STATE.editingDate = null;
-  toast('Registro salvo.');
+  document.getElementById('weekForm').style.display = 'none';
+  document.getElementById('wkDate').disabled = false;
+  STATE.editingWeekStart = null;
+  toast('Relatório semanal salvo.');
 });
 
-function editReport(date){
+function editWeekReport(weekStart){
   document.getElementById('tab-dashboard').scrollIntoView({behavior:'instant'});
-  openManualForm(date);
+  openWeekForm(weekStart);
 }
 
-function deleteReport(date){
-  STATE.reports = STATE.reports.filter(r=> r.date!==date);
-  persist('ops_reports', STATE.reports);
+function deleteWeekReport(weekStart){
+  STATE.weeklyReports = STATE.weeklyReports.filter(r=> r.weekStart!==weekStart);
+  persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
-  toast('Registro removido.');
+  toast('Relatório semanal removido.');
 }
 
-function deleteReportItem(date, cat, itemId){
-  const rep = STATE.reports.find(r=>r.date===date);
+function deleteWeekReportItem(weekStart, cat, itemId){
+  const rep = STATE.weeklyReports.find(r=>r.weekStart===weekStart);
   if(!rep) return;
   rep[cat] = rep[cat].filter(i=>i.id!==itemId);
-  persist('ops_reports', STATE.reports);
+  persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
   toast('Item removido.');
 }
 
 /* ======================= DASHBOARD RENDER ======================= */
 function renderStats(){
-  const ym = todayStr().slice(0,7);
-  const monthReports = STATE.reports.filter(r=> r.date.startsWith(ym));
-  const totals = monthReports.reduce((acc,r)=>{
-    acc.criticas += categoryTotal(r,'criticas');
-    acc.problemas += categoryTotal(r,'problemas');
-    acc.agendamentos += categoryTotal(r,'agendamentos');
-    acc.externos += categoryTotal(r,'externos');
-    return acc;
-  }, {criticas:0,problemas:0,agendamentos:0,externos:0});
-
+  const wk = getWeekStart(todayStr());
+  const rep = STATE.weeklyReports.find(r=>r.weekStart===wk);
+  const totals = {
+    criticas: rep ? categoryTotal(rep,'criticas') : 0,
+    problemas: rep ? categoryTotal(rep,'problemas') : 0,
+    agendamentos: rep ? categoryTotal(rep,'agendamentos') : 0,
+    externos: rep ? categoryTotal(rep,'externos') : 0,
+  };
   const cards = [
     {label:'Corridas Críticas', value: totals.criticas, color:'var(--crimson-bright)'},
     {label:'Problemas c/ Motoristas', value: totals.problemas, color:'var(--amber)'},
@@ -1077,24 +1189,23 @@ function renderStats(){
   row.innerHTML = cards.map(c=>`
     <div class="stat-card" style="--stat-color:${c.color}">
       <div class="label">${c.label}</div>
-      <div class="value">${c.value}<small>este mês</small></div>
+      <div class="value">${c.value}<small>esta semana</small></div>
     </div>
   `).join('');
 }
 
 function renderPulse(){
-  const days = [];
-  const base = new Date();
-  for(let i=29;i>=0;i--){
-    const d = new Date(base); d.setDate(base.getDate()-i);
-    const ds = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    const rep = STATE.reports.find(r=>r.date===ds);
-    const total = rep ? categoryTotal(rep,'criticas') : 0;
-    days.push(total);
+  const weeks = [];
+  const currentWeek = getWeekStart(todayStr());
+  for(let i=9;i>=0;i--){
+    const d = new Date(currentWeek+'T00:00:00'); d.setDate(d.getDate()-7*i);
+    const ws = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const rep = STATE.weeklyReports.find(r=>r.weekStart===ws);
+    weeks.push(rep ? categoryTotal(rep,'criticas') : 0);
   }
-  const max = Math.max(1, ...days);
-  const w = 600, h = 46, step = w/(days.length-1||1);
-  const pts = days.map((v,i)=> [i*step, h - (v/max)*(h-8) - 4]);
+  const max = Math.max(1, ...weeks);
+  const w = 600, h = 46, step = w/(weeks.length-1||1);
+  const pts = weeks.map((v,i)=> [i*step, h - (v/max)*(h-8) - 4]);
   const line = pts.map((p,i)=> (i===0?'M':'L') + p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
   const fill = line + ` L${w} ${h} L0 ${h} Z`;
   document.getElementById('pulseLine').setAttribute('d', line);
@@ -1102,68 +1213,73 @@ function renderPulse(){
 }
 
 function renderReportsTable(){
-  const wrap = document.getElementById('reportsTableWrap');
-  const hint = document.getElementById('reportsHint');
-  const sorted = [...STATE.reports].sort((a,b)=> b.date.localeCompare(a.date));
-  hint.textContent = sorted.length ? `${sorted.length} dia(s) registrado(s)` : '';
+  const wrap = document.getElementById('weeklyReportsWrap');
+  const hint = document.getElementById('weeklyReportsHint');
+  const sorted = [...STATE.weeklyReports].sort((a,b)=> b.weekStart.localeCompare(a.weekStart));
+  hint.textContent = sorted.length ? `${sorted.length} semana(s) registrada(s)` : '';
   if(sorted.length===0){
-    wrap.innerHTML = `<div class="empty-state">Nenhum registro ainda. Importe uma planilha ou adicione um registro manual.</div>`;
+    wrap.innerHTML = `<div class="empty-state">Nenhum relatório semanal ainda. Importe uma planilha ou crie um novo relatório.</div>`;
     return;
   }
-  const rowId = (i) => `rep_${i}`;
-  wrap.innerHTML = `
-    <table>
-      <thead><tr>
-        <th></th><th>Data</th><th>Críticas</th><th>Problemas</th><th>Agendamentos</th><th>Externos</th><th></th>
-      </tr></thead>
-      <tbody>
-        ${sorted.map((r,i)=>{
-          const totalItems = CATS.reduce((s,c)=> s+(r[c]||[]).length, 0);
-          const rowClass = r.diaStatus==='critico' ? ' row-critico' : r.diaStatus==='bom' ? ' row-bom' : '';
-          const dayBadge = r.diaStatus==='critico' ? '<span class="day-badge critico">Dia crítico</span>' : r.diaStatus==='bom' ? '<span class="day-badge bom">Dia bom</span>' : '';
-          return `
-          <tr class="${rowClass.trim()}">
-            <td><button class="expand-btn" onclick="toggleDetail('${rowId(i)}')" title="Ver detalhes">${totalItems ? '📝' : '⋯'}</button></td>
-            <td>${fmtDate(r.date)}${dayBadge}</td>
-            <td class="num">${categoryTotal(r,'criticas')}</td>
-            <td class="num">${categoryTotal(r,'problemas')}</td>
-            <td class="num">${categoryTotal(r,'agendamentos')}</td>
-            <td class="num">${categoryTotal(r,'externos')}</td>
-            <td style="white-space:nowrap;">
-              <button class="btn ghost small" onclick="editReport('${r.date}')">Editar</button>
-              <button class="btn danger small" onclick="deleteReport('${r.date}')">Excluir</button>
-            </td>
-          </tr>
-          <tr class="detail-row" id="${rowId(i)}">
-            <td colspan="7">
-              <div class="detail-grid">
-                ${CATS.map(cat=>`
-                  <div class="detail-item">
-                    <div class="dt-label">${CAT_LABELS[cat]}</div>
-                    ${(r[cat]||[]).length===0 ? `<div class="dt-text empty">Sem itens registrados.</div>` : (r[cat]||[]).map(item=>`
-                      <div class="table-item">
-                        <div class="txt"><span class="city-tag" style="display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;">${cityLabel(item.cidade)}</span><span style="font-family:var(--font-mono);color:var(--text-faint);font-size:11px;">×${item.quantidade}</span>
-                          ${item.descricao ? `<span class="desc">${item.descricao}</span>` : ''}
-                        </div>
-                        <button onclick="deleteReportItem('${r.date}','${cat}','${item.id}')" title="Remover item">×</button>
-                      </div>
-                    `).join('')}
+  wrap.innerHTML = sorted.map((r,i)=>{
+    const detailId = `wk_detail_${i}`;
+    const statusClass = r.status==='critica' ? ' critica' : r.status==='boa' ? ' boa' : '';
+    const statusBadge = r.status==='critica' ? '<span class="day-badge critico">Semana crítica</span>' : r.status==='boa' ? '<span class="day-badge bom">Semana boa</span>' : '';
+    return `
+    <div class="week-card${statusClass}">
+      <div class="head">
+        <div>
+          <div class="period">Semana de ${weekRangeLabel(r.weekStart)}${statusBadge}</div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost small" onclick="toggleWeekDetail('${detailId}')" id="btn-${detailId}">Ver detalhes</button>
+          <button class="btn ghost small" onclick="editWeekReport('${r.weekStart}')">Editar</button>
+          <button class="btn danger small" onclick="deleteWeekReport('${r.weekStart}')">Excluir</button>
+        </div>
+      </div>
+      <div class="week-chips">
+        <span class="week-chip">Críticas <b>${categoryTotal(r,'criticas')}</b></span>
+        <span class="week-chip">Problemas <b>${categoryTotal(r,'problemas')}</b></span>
+        <span class="week-chip">Agendamentos <b>${categoryTotal(r,'agendamentos')}</b></span>
+        <span class="week-chip">Externos <b>${categoryTotal(r,'externos')}</b></span>
+      </div>
+      ${r.resumo ? `<div class="week-resumo-preview">${escapeHtml(r.resumo)}</div>` : ''}
+      <div class="week-detail" id="${detailId}">
+        <div class="sub-title">Resumo geral da semana</div>
+        <div class="txt-block${r.resumo?'':' empty'}">${escapeHtml(r.resumo) || 'Sem resumo registrado.'}</div>
+
+        <div class="sub-title">Itens por categoria</div>
+        <div class="detail-grid">
+          ${CATS.map(cat=>`
+            <div class="detail-item">
+              <div class="dt-label">${CAT_LABELS[cat]}</div>
+              ${(r[cat]||[]).length===0 ? `<div class="dt-text empty">Sem itens registrados.</div>` : (r[cat]||[]).map(item=>`
+                <div class="table-item">
+                  <div class="txt"><span class="city-tag" style="display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;">${cityLabel(item.cidade)}</span><span style="font-family:var(--font-mono);color:var(--text-faint);font-size:11px;">×${item.quantidade}</span>
+                    ${item.descricao ? `<span class="desc">${escapeHtml(item.descricao)}</span>` : ''}
                   </div>
-                `).join('')}
-              </div>
-            </td>
-          </tr>
-        `;}).join('')}
-      </tbody>
-    </table>
-  `;
+                  <button onclick="deleteWeekReportItem('${r.weekStart}','${cat}','${item.id}')" title="Remover item">×</button>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="sub-title">Ações tomadas / resoluções</div>
+        <div class="txt-block${r.acoes?'':' empty'}">${escapeHtml(r.acoes) || 'Nada registrado.'}</div>
+
+        <div class="sub-title">Pontos de atenção para a próxima semana</div>
+        <div class="txt-block${r.pendencias?'':' empty'}">${escapeHtml(r.pendencias) || 'Nada registrado.'}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function toggleDetail(id){
-  const row = document.getElementById(id);
-  row.classList.toggle('open');
-  const btn = row.previousElementSibling.querySelector('.expand-btn');
-  btn.classList.toggle('open', row.classList.contains('open'));
+function toggleWeekDetail(id){
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  const btn = document.getElementById('btn-'+id);
+  btn.textContent = el.classList.contains('open') ? 'Ocultar detalhes' : 'Ver detalhes';
 }
 
 function renderDashboard(){
@@ -1694,13 +1810,13 @@ function initFirebaseSync(){
   }
   const col = window.db.collection(FS_COLLECTION);
 
-  col.doc('ops_reports').onSnapshot(snap=>{
+  col.doc('ops_weekly_reports').onSnapshot(snap=>{
     if(snap.exists){
-      STATE.reports = migrateReports(snap.data().value || []);
-      localStorage.setItem('ops_reports', JSON.stringify(STATE.reports));
+      STATE.weeklyReports = snap.data().value || [];
+      localStorage.setItem('ops_weekly_reports', JSON.stringify(STATE.weeklyReports));
       renderDashboard();
-    } else if(STATE.reports.length){
-      col.doc('ops_reports').set({ value: STATE.reports, updatedAt: Date.now() });
+    } else if(STATE.weeklyReports.length){
+      col.doc('ops_weekly_reports').set({ value: STATE.weeklyReports, updatedAt: Date.now() });
     }
   }, syncError);
 
