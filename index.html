@@ -189,6 +189,14 @@
   .week-detail .txt-block{font-size:12.5px;color:var(--text-dim);white-space:pre-wrap;line-height:1.65;}
   .week-detail .txt-block.empty{color:var(--text-faint);font-style:italic;}
 
+  .day-accordion{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+  .day-accordion-head{width:100%;background:var(--surface-2);border:none;color:var(--text);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;text-align:left;}
+  .day-accordion-head:hover{background:var(--surface-3);}
+  .day-accordion-head small{display:block;font-weight:400;color:var(--text-faint);font-size:10.5px;margin-top:2px;}
+  .day-accordion-count{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);background:var(--surface-3);padding:2px 9px;border-radius:10px;flex-shrink:0;margin-left:10px;}
+  .day-accordion-body{display:none;padding:14px;border-top:1px solid var(--border);background:var(--surface);}
+  .day-accordion-body.open{display:block;}
+
   .manual-form{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px;}
   .manual-form label{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;}
   .manual-form input,.manual-form select,.manual-form textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:7px 8px;border-radius:5px;font-size:12.5px;outline:none;font-family:var(--font-body);}
@@ -458,48 +466,9 @@
           <textarea id="wkResumo" style="min-height:130px;" placeholder="Como foi a semana de forma geral? Panorama do plantão noturno, tendências observadas, contexto importante..."></textarea>
         </div>
 
-        <div class="metric-block">
-          <div class="m-label">Corridas críticas</div>
-          <div class="pending-items" id="items-criticas"></div>
-          <div class="item-add-row">
-            <div class="f"><label>Cidade</label><select id="add-criticas-cidade"></select></div>
-            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-criticas-qtd" value="1" min="1"></div>
-            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-criticas-desc" placeholder="O que aconteceu..."></div>
-            <button class="btn small" type="button" onclick="addItem('criticas')">+ adicionar</button>
-          </div>
-        </div>
-
-        <div class="metric-block">
-          <div class="m-label">Problemas c/ motoristas</div>
-          <div class="pending-items" id="items-problemas"></div>
-          <div class="item-add-row">
-            <div class="f"><label>Cidade</label><select id="add-problemas-cidade"></select></div>
-            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-problemas-qtd" value="1" min="1"></div>
-            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-problemas-desc" placeholder="Detalhes do ocorrido..."></div>
-            <button class="btn small" type="button" onclick="addItem('problemas')">+ adicionar</button>
-          </div>
-        </div>
-
-        <div class="metric-block">
-          <div class="m-label">Agendamentos</div>
-          <div class="pending-items" id="items-agendamentos"></div>
-          <div class="item-add-row">
-            <div class="f"><label>Cidade</label><select id="add-agendamentos-cidade"></select></div>
-            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-agendamentos-qtd" value="1" min="1"></div>
-            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-agendamentos-desc" placeholder="Observações..."></div>
-            <button class="btn small" type="button" onclick="addItem('agendamentos')">+ adicionar</button>
-          </div>
-        </div>
-
-        <div class="metric-block">
-          <div class="m-label">Fatores externos</div>
-          <div class="pending-items" id="items-externos"></div>
-          <div class="item-add-row">
-            <div class="f"><label>Cidade</label><select id="add-externos-cidade"></select></div>
-            <div class="f qty-f"><label>Qtd</label><input type="number" id="add-externos-qtd" value="1" min="1"></div>
-            <div class="f desc-f"><label>Descrição</label><input type="text" id="add-externos-desc" placeholder="ex: chuva forte, bloqueio de via..."></div>
-            <button class="btn small" type="button" onclick="addItem('externos')">+ adicionar</button>
-          </div>
+        <div class="field">
+          <label>Ocorrências por dia da semana</label>
+          <div id="dayPanels"></div>
         </div>
 
         <div class="field" style="margin-top:6px;">
@@ -787,23 +756,49 @@ function getWeekEnd(weekStart){
 function weekRangeLabel(weekStart){
   return `${fmtDate(weekStart)} a ${fmtDate(getWeekEnd(weekStart))}`;
 }
+function weekDates(weekStart){
+  const dates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(weekStart+'T00:00:00'); d.setDate(d.getDate()+i);
+    dates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);
+  }
+  return dates;
+}
+const WEEKDAY_FULL = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+function weekdayLabel(dateStr){
+  return WEEKDAY_FULL[new Date(dateStr+'T00:00:00').getDay()];
+}
+function emptyDay(){ return {criticas:[], problemas:[], agendamentos:[], externos:[]}; }
+
+/* migra do formato diário original (com granularidade de dia) direto para semanas com dias */
 function migrateToWeekly(dailyReports){
   const byWeek = {};
   dailyReports.forEach(dr=>{
     const wk = getWeekStart(dr.date);
-    if(!byWeek[wk]){
-      byWeek[wk] = { id:'wk_'+wk, weekStart: wk, status:null, resumo:'', criticas:[], problemas:[], agendamentos:[], externos:[], acoes:'', pendencias:'', createdAt: Date.now() };
-    }
+    if(!byWeek[wk]) byWeek[wk] = { id:'wk_'+wk, weekStart: wk, status:null, resumo:'', days:{}, acoes:'', pendencias:'', createdAt: Date.now() };
     const rep = byWeek[wk];
-    CATS.forEach(c=> (dr[c]||[]).forEach(item=> rep[c].push({...item})));
+    if(!rep.days[dr.date]) rep.days[dr.date] = emptyDay();
+    CATS.forEach(c=> (dr[c]||[]).forEach(item=> rep.days[dr.date][c].push({...item})));
     if(dr.diaStatus==='critico' && !rep.status) rep.status = 'critica';
     if(dr.diaStatus==='bom' && !rep.status) rep.status = 'boa';
   });
   return Object.values(byWeek);
 }
+/* migra relatórios semanais no formato "achatado" (sem dias) para o formato com dias,
+   colocando os itens antigos na segunda-feira da semana (não temos como saber o dia exato) */
+function migrateWeeklyToDays(reports){
+  return reports.map(r=>{
+    if(r.days) return r;
+    const days = {};
+    days[r.weekStart] = {
+      criticas: r.criticas||[], problemas: r.problemas||[], agendamentos: r.agendamentos||[], externos: r.externos||[]
+    };
+    return { id: r.id, weekStart: r.weekStart, status: r.status||null, resumo: r.resumo||'', days, acoes: r.acoes||'', pendencias: r.pendencias||'', createdAt: r.createdAt||Date.now() };
+  });
+}
 function initWeeklyReports(){
   const existing = load('ops_weekly_reports', null);
-  if(existing) return existing;
+  if(existing) return migrateWeeklyToDays(existing);
   const legacyDaily = migrateReports(load('ops_reports', []));
   return migrateToWeekly(legacyDaily);
 }
@@ -820,7 +815,8 @@ const STATE = {
   activeCity: null,
   dayModalDate: null,
   pendingPeriods: [],
-  pendingItems: {criticas:[], problemas:[], agendamentos:[], externos:[]},
+  pendingDays: {},
+  currentWeekDates: [],
   pendingWeekStatus: null,
   pendingWeekStart: null,
   editingWeekStart: null,
@@ -984,9 +980,11 @@ function importRows(rows){
 
     let rep = STATE.weeklyReports.find(r=>r.weekStart===weekStart);
     if(!rep){
-      rep = { id:'wk_'+weekStart, weekStart, status:null, resumo:'', criticas:[], problemas:[], agendamentos:[], externos:[], acoes:'', pendencias:'', createdAt: Date.now() };
+      rep = { id:'wk_'+weekStart, weekStart, status:null, resumo:'', days:{}, acoes:'', pendencias:'', createdAt: Date.now() };
       STATE.weeklyReports.push(rep);
     }
+    if(!rep.days[dateStr]) rep.days[dateStr] = emptyDay();
+    const day = rep.days[dateStr];
 
     const specs = [
       ['criticas', toNum(map['corridas criticas'] ?? map['criticas']), txt(map['detalhes corridas criticas'] ?? map['observacoes corridas criticas'] ?? map['obs corridas criticas'] ?? map['descricao corridas criticas'])],
@@ -997,9 +995,9 @@ function importRows(rows){
     specs.forEach(([cat, qty, desc])=>{
       if(qty>0 || desc){
         // evita duplicar linhas idênticas ao reimportar a mesma planilha
-        const dupe = rep[cat].some(i=> i.cidade===cidadeTag && i.quantidade===(qty||1) && i.descricao===desc);
+        const dupe = day[cat].some(i=> i.cidade===cidadeTag && i.quantidade===(qty||1) && i.descricao===desc);
         if(!dupe){
-          rep[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cidadeTag, quantidade: qty||1, descricao: desc });
+          day[cat].push({ id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade: cidadeTag, quantidade: qty||1, descricao: desc });
         }
       }
     });
@@ -1021,27 +1019,63 @@ function buildCitySelect(id){
   });
   el.innerHTML = html;
 }
-CATS.forEach(cat=> buildCitySelect(`add-${cat}-cidade`));
 
-function addItem(cat){
-  const cidadeSel = document.getElementById(`add-${cat}-cidade`);
+function buildDayForm(weekStart){
+  const dates = weekDates(weekStart);
+  STATE.currentWeekDates = dates;
+  const panelsEl = document.getElementById('dayPanels');
+  panelsEl.innerHTML = dates.map(d=>`
+    <div class="day-accordion" data-date="${d}">
+      <button type="button" class="day-accordion-head" onclick="toggleDayPanel('${d}')">
+        <span>${weekdayLabel(d)} <small>${fmtDate(d)}</small></span>
+        <span class="day-accordion-count" id="day-count-${d}">0 itens</span>
+      </button>
+      <div class="day-accordion-body" id="day-panel-${d}">
+        ${CATS.map(cat=>`
+          <div class="metric-block">
+            <div class="m-label">${CAT_LABELS[cat]}</div>
+            <div class="pending-items" id="items-${d}-${cat}"></div>
+            <div class="item-add-row">
+              <div class="f"><label>Cidade</label><select id="add-${d}-${cat}-cidade"></select></div>
+              <div class="f qty-f"><label>Qtd</label><input type="number" id="add-${d}-${cat}-qtd" value="1" min="1"></div>
+              <div class="f desc-f"><label>Descrição</label><input type="text" id="add-${d}-${cat}-desc" placeholder="O que aconteceu..."></div>
+              <button class="btn small" type="button" onclick="addDayItem('${d}','${cat}')">+ adicionar</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  dates.forEach(d=> CATS.forEach(cat=> buildCitySelect(`add-${d}-${cat}-cidade`)));
+  dates.forEach(d=>{ if(!STATE.pendingDays[d]) STATE.pendingDays[d] = emptyDay(); });
+}
+
+function toggleDayPanel(date){
+  document.getElementById(`day-panel-${date}`).classList.toggle('open');
+}
+
+function addDayItem(date, cat){
+  const cidadeSel = document.getElementById(`add-${date}-${cat}-cidade`);
   const cidade = cidadeSel.value || null;
-  const qtd = Math.max(1, Math.round(toNum(document.getElementById(`add-${cat}-qtd`).value)) || 1);
-  const desc = document.getElementById(`add-${cat}-desc`).value.trim();
+  const qtd = Math.max(1, Math.round(toNum(document.getElementById(`add-${date}-${cat}-qtd`).value)) || 1);
+  const desc = document.getElementById(`add-${date}-${cat}-desc`).value.trim();
   const item = { id:'itm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), cidade, quantidade: qtd, descricao: desc };
-  STATE.pendingItems[cat].push(item);
+  STATE.pendingDays[date][cat].push(item);
   cidadeSel.value = '';
-  document.getElementById(`add-${cat}-qtd`).value = 1;
-  document.getElementById(`add-${cat}-desc`).value = '';
-  renderPendingItems(cat);
+  document.getElementById(`add-${date}-${cat}-qtd`).value = 1;
+  document.getElementById(`add-${date}-${cat}-desc`).value = '';
+  renderDayPendingItems(date, cat);
+  updateDayCount(date);
 }
-function removeItem(cat, itemId){
-  STATE.pendingItems[cat] = STATE.pendingItems[cat].filter(i=>i.id!==itemId);
-  renderPendingItems(cat);
+function removeDayItem(date, cat, itemId){
+  STATE.pendingDays[date][cat] = STATE.pendingDays[date][cat].filter(i=>i.id!==itemId);
+  renderDayPendingItems(date, cat);
+  updateDayCount(date);
 }
-function renderPendingItems(cat){
-  const el = document.getElementById(`items-${cat}`);
-  const items = STATE.pendingItems[cat];
+function renderDayPendingItems(date, cat){
+  const el = document.getElementById(`items-${date}-${cat}`);
+  if(!el) return;
+  const items = STATE.pendingDays[date][cat];
   if(items.length===0){
     el.innerHTML = `<div class="no-items">Nenhum item adicionado ainda.</div>`;
     return;
@@ -1049,11 +1083,21 @@ function renderPendingItems(cat){
   el.innerHTML = items.map(i=>`
     <div class="pending-item">
       <div class="txt"><span class="city-tag">${cityLabel(i.cidade)}</span><span class="qty">×${i.quantidade}</span><span class="desc${i.descricao?'':' empty'}">${i.descricao || 'sem descrição'}</span></div>
-      <button type="button" onclick="removeItem('${cat}','${i.id}')" title="Remover">×</button>
+      <button type="button" onclick="removeDayItem('${date}','${cat}','${i.id}')" title="Remover">×</button>
     </div>
   `).join('');
 }
-function renderAllPendingItems(){ CATS.forEach(c=> renderPendingItems(c)); }
+function updateDayCount(date){
+  const total = CATS.reduce((s,cat)=> s + (STATE.pendingDays[date]?.[cat]?.length||0), 0);
+  const el = document.getElementById(`day-count-${date}`);
+  if(el) el.textContent = `${total} ${total===1?'item':'itens'}`;
+}
+function renderAllDayPanels(){
+  STATE.currentWeekDates.forEach(d=>{
+    CATS.forEach(cat=> renderDayPendingItems(d, cat));
+    updateDayCount(d);
+  });
+}
 
 function renderWeekStatusButtons(){
   document.getElementById('weekStatusBtnCritica').classList.toggle('active', STATE.pendingWeekStatus==='critica');
@@ -1074,40 +1118,61 @@ function updateWkRangeLabel(){
   STATE.pendingWeekStart = wk;
   label.textContent = `Semana: ${weekRangeLabel(wk)} (segunda a domingo)`;
 }
-document.getElementById('wkDate').addEventListener('change', updateWkRangeLabel);
+document.getElementById('wkDate').addEventListener('change', ()=>{
+  updateWkRangeLabel();
+  if(!STATE.editingWeekStart && STATE.pendingWeekStart){
+    STATE.pendingDays = {};
+    buildDayForm(STATE.pendingWeekStart);
+    renderAllDayPanels();
+  }
+});
 
 function openWeekForm(editWeekStart){
   const f = document.getElementById('weekForm');
   const wkDateInput = document.getElementById('wkDate');
+  STATE.pendingDays = {};
   if(editWeekStart){
     STATE.editingWeekStart = editWeekStart;
     const rep = STATE.weeklyReports.find(r=>r.weekStart===editWeekStart);
-    CATS.forEach(c=> STATE.pendingItems[c] = rep ? rep[c].map(i=>({...i})) : []);
     STATE.pendingWeekStatus = rep ? (rep.status || null) : null;
     STATE.pendingWeekStart = editWeekStart;
     wkDateInput.value = editWeekStart;
     wkDateInput.disabled = true;
     document.getElementById('wkRangeLabel').textContent = `Semana: ${weekRangeLabel(editWeekStart)} (segunda a domingo)`;
+    buildDayForm(editWeekStart);
+    if(rep && rep.days){
+      Object.keys(rep.days).forEach(d=>{
+        if(STATE.pendingDays[d] !== undefined){
+          STATE.pendingDays[d] = {
+            criticas: (rep.days[d].criticas||[]).map(i=>({...i})),
+            problemas: (rep.days[d].problemas||[]).map(i=>({...i})),
+            agendamentos: (rep.days[d].agendamentos||[]).map(i=>({...i})),
+            externos: (rep.days[d].externos||[]).map(i=>({...i})),
+          };
+        }
+      });
+    }
+    renderAllDayPanels();
     document.getElementById('wkResumo').value = rep ? (rep.resumo||'') : '';
     document.getElementById('wkAcoes').value = rep ? (rep.acoes||'') : '';
     document.getElementById('wkPendencias').value = rep ? (rep.pendencias||'') : '';
     document.getElementById('weekFormTitle').textContent = 'Editando relatório da semana de ' + weekRangeLabel(editWeekStart);
   } else {
     STATE.editingWeekStart = null;
-    CATS.forEach(c=> STATE.pendingItems[c] = []);
     STATE.pendingWeekStatus = null;
     const wk = getWeekStart(todayStr());
     STATE.pendingWeekStart = wk;
     wkDateInput.value = todayStr();
     wkDateInput.disabled = false;
     document.getElementById('wkRangeLabel').textContent = `Semana: ${weekRangeLabel(wk)} (segunda a domingo)`;
+    buildDayForm(wk);
+    renderAllDayPanels();
     document.getElementById('wkResumo').value = '';
     document.getElementById('wkAcoes').value = '';
     document.getElementById('wkPendencias').value = '';
     document.getElementById('weekFormTitle').textContent = 'Novo relatório semanal';
   }
   renderWeekStatusButtons();
-  renderAllPendingItems();
   f.style.display = 'block';
   f.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -1128,17 +1193,18 @@ document.getElementById('weekSave').addEventListener('click', ()=>{
   const resumo = document.getElementById('wkResumo').value.trim();
   const acoes = document.getElementById('wkAcoes').value.trim();
   const pendencias = document.getElementById('wkPendencias').value.trim();
-  const totalItems = CATS.reduce((s,c)=> s + STATE.pendingItems[c].length, 0);
+  const totalItems = STATE.currentWeekDates.reduce((s,d)=> s + CATS.reduce((s2,c)=> s2+(STATE.pendingDays[d]?.[c]?.length||0), 0), 0);
   if(totalItems===0 && !resumo && !acoes && !pendencias){
-    toast('Escreva o resumo da semana ou adicione ao menos um item.'); return;
+    toast('Escreva o resumo da semana ou adicione ao menos um item em algum dia.'); return;
   }
   const idx = STATE.weeklyReports.findIndex(r=> r.weekStart===weekStart);
+  const days = {};
+  STATE.currentWeekDates.forEach(d=> days[d] = STATE.pendingDays[d] || emptyDay());
   const entry = {
     id: 'wk_'+weekStart, weekStart, status: STATE.pendingWeekStatus,
-    resumo, acoes, pendencias,
+    resumo, days, acoes, pendencias,
     createdAt: idx>=0 ? STATE.weeklyReports[idx].createdAt : Date.now(),
   };
-  CATS.forEach(c=> entry[c] = STATE.pendingItems[c]);
   if(idx>=0) STATE.weeklyReports[idx] = entry; else STATE.weeklyReports.push(entry);
   persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
@@ -1160,13 +1226,17 @@ function deleteWeekReport(weekStart){
   toast('Relatório semanal removido.');
 }
 
-function deleteWeekReportItem(weekStart, cat, itemId){
+function deleteDayReportItem(weekStart, date, cat, itemId){
   const rep = STATE.weeklyReports.find(r=>r.weekStart===weekStart);
-  if(!rep) return;
-  rep[cat] = rep[cat].filter(i=>i.id!==itemId);
+  if(!rep || !rep.days || !rep.days[date]) return;
+  rep.days[date][cat] = rep.days[date][cat].filter(i=>i.id!==itemId);
   persist('ops_weekly_reports', STATE.weeklyReports);
   renderDashboard();
   toast('Item removido.');
+}
+function weekCategoryTotal(rep, cat){
+  if(!rep.days) return 0;
+  return Object.values(rep.days).reduce((s,day)=> s + (day[cat]||[]).reduce((s2,i)=>s2+(i.quantidade||1),0), 0);
 }
 
 /* ======================= DASHBOARD RENDER ======================= */
@@ -1174,10 +1244,10 @@ function renderStats(){
   const wk = getWeekStart(todayStr());
   const rep = STATE.weeklyReports.find(r=>r.weekStart===wk);
   const totals = {
-    criticas: rep ? categoryTotal(rep,'criticas') : 0,
-    problemas: rep ? categoryTotal(rep,'problemas') : 0,
-    agendamentos: rep ? categoryTotal(rep,'agendamentos') : 0,
-    externos: rep ? categoryTotal(rep,'externos') : 0,
+    criticas: rep ? weekCategoryTotal(rep,'criticas') : 0,
+    problemas: rep ? weekCategoryTotal(rep,'problemas') : 0,
+    agendamentos: rep ? weekCategoryTotal(rep,'agendamentos') : 0,
+    externos: rep ? weekCategoryTotal(rep,'externos') : 0,
   };
   const cards = [
     {label:'Corridas Críticas', value: totals.criticas, color:'var(--crimson-bright)'},
@@ -1201,7 +1271,7 @@ function renderPulse(){
     const d = new Date(currentWeek+'T00:00:00'); d.setDate(d.getDate()-7*i);
     const ws = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     const rep = STATE.weeklyReports.find(r=>r.weekStart===ws);
-    weeks.push(rep ? categoryTotal(rep,'criticas') : 0);
+    weeks.push(rep ? weekCategoryTotal(rep,'criticas') : 0);
   }
   const max = Math.max(1, ...weeks);
   const w = 600, h = 46, step = w/(weeks.length-1||1);
@@ -1225,6 +1295,23 @@ function renderReportsTable(){
     const detailId = `wk_detail_${i}`;
     const statusClass = r.status==='critica' ? ' critica' : r.status==='boa' ? ' boa' : '';
     const statusBadge = r.status==='critica' ? '<span class="day-badge critico">Semana crítica</span>' : r.status==='boa' ? '<span class="day-badge bom">Semana boa</span>' : '';
+    const dates = weekDates(r.weekStart);
+    const dayBlocks = dates.map(d=>{
+      const day = (r.days && r.days[d]) || null;
+      const hasItems = day && CATS.some(cat=> (day[cat]||[]).length>0);
+      if(!hasItems) return '';
+      return `
+        <div class="sub-title">${weekdayLabel(d)} · ${fmtDate(d)}</div>
+        ${CATS.map(cat=> (day[cat]||[]).map(item=>`
+          <div class="table-item">
+            <div class="txt"><span class="badge texto" style="margin-right:6px;">${CAT_LABELS[cat]}</span><span class="city-tag" style="display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;">${cityLabel(item.cidade)}</span><span style="font-family:var(--font-mono);color:var(--text-faint);font-size:11px;">×${item.quantidade}</span>
+              ${item.descricao ? `<span class="desc">${escapeHtml(item.descricao)}</span>` : ''}
+            </div>
+            <button onclick="deleteDayReportItem('${r.weekStart}','${d}','${cat}','${item.id}')" title="Remover item">×</button>
+          </div>
+        `).join('')).join('')}
+      `;
+    }).join('');
     return `
     <div class="week-card${statusClass}">
       <div class="head">
@@ -1238,32 +1325,18 @@ function renderReportsTable(){
         </div>
       </div>
       <div class="week-chips">
-        <span class="week-chip">Críticas <b>${categoryTotal(r,'criticas')}</b></span>
-        <span class="week-chip">Problemas <b>${categoryTotal(r,'problemas')}</b></span>
-        <span class="week-chip">Agendamentos <b>${categoryTotal(r,'agendamentos')}</b></span>
-        <span class="week-chip">Externos <b>${categoryTotal(r,'externos')}</b></span>
+        <span class="week-chip">Críticas <b>${weekCategoryTotal(r,'criticas')}</b></span>
+        <span class="week-chip">Problemas <b>${weekCategoryTotal(r,'problemas')}</b></span>
+        <span class="week-chip">Agendamentos <b>${weekCategoryTotal(r,'agendamentos')}</b></span>
+        <span class="week-chip">Externos <b>${weekCategoryTotal(r,'externos')}</b></span>
       </div>
       ${r.resumo ? `<div class="week-resumo-preview">${escapeHtml(r.resumo)}</div>` : ''}
       <div class="week-detail" id="${detailId}">
         <div class="sub-title">Resumo geral da semana</div>
         <div class="txt-block${r.resumo?'':' empty'}">${escapeHtml(r.resumo) || 'Sem resumo registrado.'}</div>
 
-        <div class="sub-title">Itens por categoria</div>
-        <div class="detail-grid">
-          ${CATS.map(cat=>`
-            <div class="detail-item">
-              <div class="dt-label">${CAT_LABELS[cat]}</div>
-              ${(r[cat]||[]).length===0 ? `<div class="dt-text empty">Sem itens registrados.</div>` : (r[cat]||[]).map(item=>`
-                <div class="table-item">
-                  <div class="txt"><span class="city-tag" style="display:inline-block;background:var(--crimson-glow);color:var(--crimson-bright);font-size:10px;padding:1px 7px;border-radius:9px;margin-right:6px;font-weight:600;">${cityLabel(item.cidade)}</span><span style="font-family:var(--font-mono);color:var(--text-faint);font-size:11px;">×${item.quantidade}</span>
-                    ${item.descricao ? `<span class="desc">${escapeHtml(item.descricao)}</span>` : ''}
-                  </div>
-                  <button onclick="deleteWeekReportItem('${r.weekStart}','${cat}','${item.id}')" title="Remover item">×</button>
-                </div>
-              `).join('')}
-            </div>
-          `).join('')}
-        </div>
+        <div class="sub-title" style="margin-top:18px;">Ocorrências por dia</div>
+        ${dayBlocks.trim() ? dayBlocks : '<div class="dt-text empty">Sem itens registrados em nenhum dia desta semana.</div>'}
 
         <div class="sub-title">Ações tomadas / resoluções</div>
         <div class="txt-block${r.acoes?'':' empty'}">${escapeHtml(r.acoes) || 'Nada registrado.'}</div>
@@ -1812,7 +1885,7 @@ function initFirebaseSync(){
 
   col.doc('ops_weekly_reports').onSnapshot(snap=>{
     if(snap.exists){
-      STATE.weeklyReports = snap.data().value || [];
+      STATE.weeklyReports = migrateWeeklyToDays(snap.data().value || []);
       localStorage.setItem('ops_weekly_reports', JSON.stringify(STATE.weeklyReports));
       renderDashboard();
     } else if(STATE.weeklyReports.length){
